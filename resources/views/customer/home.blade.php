@@ -114,6 +114,59 @@
         </div>
     </section>
 
+    <!-- Promo Section -->
+    @if($promotions->count() > 0)
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="text-center mb-16">
+                <span
+                    class="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold mb-4">
+                    <i class="fas fa-tags mr-1"></i> Penawaran Terbatas
+                </span>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                    Promo Spesial
+                </h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Nikmati diskon eksklusif untuk reservasi ruang meeting di Amaze Hotel Kediri
+                </p>
+            </div>
+
+            <!-- Promo Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                @foreach($promotions as $promo)
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 animate-fade-in group">
+                        <!-- Promo Badge -->
+                        <div class="bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 px-6 py-8 text-center relative overflow-hidden">
+                            <div class="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                            <div class="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full"></div>
+                            <div class="absolute top-2 right-3 w-8 h-8 bg-white/10 rounded-full"></div>
+                            <p class="text-white/90 text-sm font-medium mb-1 relative z-10">Diskon Hingga</p>
+                            <p class="text-white text-6xl font-extrabold relative z-10 drop-shadow-sm">{{ (int) $promo->discount }}%</p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-3">{{ $promo->name }}</h3>
+
+                            <div class="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg mb-4">
+                                <i class="fas fa-check-circle text-sm"></i>
+                                <span class="text-sm font-semibold">Promo Aktif</span>
+                            </div>
+
+                            <a href="{{ route('rooms.index') }}"
+                               class="block w-full text-center bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md group-hover:shadow-lg">
+                                <i class="fas fa-calendar-check mr-2"></i>
+                                Reservasi Sekarang
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
     <!-- CTA Section -->
     <section class="py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

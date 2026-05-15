@@ -38,9 +38,7 @@
                         <a href="/rooms" class="text-gray-600 hover:text-amber-600 font-medium text-sm tracking-wide transition-colors">
                             Meeting Room
                         </a>
-                        <a href="#" class="text-gray-600 hover:text-amber-600 font-medium text-sm tracking-wide transition-colors">
-                            Promo
-                        </a>
+
                         <a href="/contact" class="text-gray-600 hover:text-amber-600 font-medium text-sm tracking-wide transition-colors">
                             Kontak
                         </a>
@@ -74,9 +72,7 @@
                     <a href="/rooms" class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
                         Meeting Room
                     </a>
-                    <a href="#" class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
-                        Promo
-                    </a>
+
                     <a href="/contact" class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
                         Kontak
                     </a>
@@ -135,7 +131,7 @@
                         <ul class="space-y-3">
                             <li><a href="/" class="text-gray-400 hover:text-amber-500 text-sm transition-colors">Beranda</a></li>
                             <li><a href="/rooms" class="text-gray-400 hover:text-amber-500 text-sm transition-colors">Meeting Room</a></li>
-                            <li><a href="#" class="text-gray-400 hover:text-amber-500 text-sm transition-colors">Promo Spesial</a></li>
+
                             <li><a href="#" class="text-gray-400 hover:text-amber-500 text-sm transition-colors">Tentang Kami</a></li>
                             <li><a href="#" class="text-gray-400 hover:text-amber-500 text-sm transition-colors">FAQ</a></li>
                         </ul>

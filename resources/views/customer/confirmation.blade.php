@@ -84,7 +84,7 @@
                         </div>
                         
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-500">Waktu</span>
+                            <span class="text-gray-500">Sesi</span>
                             <span class="font-semibold text-gray-800">{{ $reservation->time }}</span>
                         </div>
                         

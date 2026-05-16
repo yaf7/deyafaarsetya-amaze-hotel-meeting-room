@@ -57,28 +57,28 @@ class InitialDataSeeder extends Seeder
         FoodPackage::insert([
             [
                 'name' => 'Half Day Meeting',
-                'price' => 150000,
-                'description' => '4 jam: 1 Coffee Break + 1 Meal'
+                'price' => 195000,
+                'description' => '4 jam: 1x Coffee Break + 1x Meal'
             ],
             [
                 'name' => 'Full Day Meeting',
-                'price' => 195000,
-                'description' => '8 jam: 2 Coffee Break + 1 Meal'
+                'price' => 235000,
+                'description' => '8 jam: 2x Coffee Break + 1x Meal'
             ],
             [
                 'name' => 'Full Board Meeting',
-                'price' => 235000,
-                'description' => '12 jam: 2 Coffee Break + 2 Meal'
+                'price' => 380000,
+                'description' => '12 jam: 2x Coffee Break + 2x Meal'
             ],
             [
                 'name' => 'Residential Full Day Meeting',
                 'price' => 550000,
-                'description' => '8 jam + 1 malam menginap: Superior Room + 1 Coffee Break + 1 Meal (Twin)'
+                'description' => '8 jam + Menginap: Superior Room + 1x CB + 1x Meal'
             ],
             [
                 'name' => 'Residential Full Board Meeting',
                 'price' => 600000,
-                'description' => '12 jam + 1 malam menginap: Superior Room + 2 Coffee Break + 3 Meal (Twin)'
+                'description' => '12 jam + Menginap: Superior Room + 2x CB + 3x Meals'
             ]
         ]);
     }

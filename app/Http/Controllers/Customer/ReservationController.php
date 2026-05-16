@@ -16,6 +16,73 @@ use Illuminate\Support\Facades\DB;
 class ReservationController extends Controller
 {
     /**
+     * Helper: Cek konflik sesi untuk ruangan pada tanggal tertentu.
+     * Rules:
+     * - Maks 2 reservasi/hari: hanya kombinasi Pagi+Siang ATAU Pagi+Malam
+     * - Siang & Malam TIDAK boleh bersamaan
+     * - Fullboard/Residential mengunci ruangan (maks 1 reservasi)
+     *
+     * @return string|null Pesan error jika konflik, null jika OK
+     */
+    private function checkSessionConflict($roomId, $date, $newSession, $newPackageName = '')
+    {
+        // Ambil semua reservasi aktif (sukses) untuk ruangan ini di tanggal ini
+        $existing = Reservation::where('meeting_room_id', $roomId)
+            ->where('date', $date)
+            ->where('status', 'sukses')
+            ->get();
+
+        if ($existing->isEmpty()) {
+            return null; // Tidak ada konflik
+        }
+
+        // Cek apakah sudah ada reservasi Fullboard/Residential di tanggal ini
+        foreach ($existing as $res) {
+            $resSession = $res->time ?? '';
+            $resPkg = strtolower($res->foodPackage->name ?? '');
+
+            if (str_contains($resSession, 'Fullboard') || str_contains($resPkg, 'full board') || str_contains($resPkg, 'residential')) {
+                return 'Ruangan sudah dipesan untuk sesi Fullboard/Residential pada tanggal ini (kapasitas penuh). Silakan pilih tanggal lain.';
+            }
+        }
+
+        // Jika pesanan baru adalah Fullboard atau Residential, tolak jika sudah ada reservasi apapun
+        $isNewFullboard = str_contains($newSession, 'Fullboard') || str_contains(strtolower($newPackageName), 'full board') || str_contains(strtolower($newPackageName), 'residential');
+        if ($isNewFullboard && $existing->count() > 0) {
+            return 'Tidak bisa memesan sesi Fullboard/Residential karena sudah ada reservasi lain pada tanggal ini. Silakan pilih tanggal lain.';
+        }
+
+        // Ambil sesi-sesi yang sudah ada
+        $existingSessions = $existing->pluck('time')->toArray();
+
+        // Cek apakah sesi yang sama sudah ada
+        foreach ($existingSessions as $s) {
+            if ($s === $newSession) {
+                return 'Sesi ini sudah dipesan pada tanggal tersebut. Silakan pilih sesi lain.';
+            }
+        }
+
+        // Sudah ada 2 reservasi? Tolak
+        if ($existing->count() >= 2) {
+            return 'Ruangan sudah memiliki 2 reservasi pada tanggal ini (kapasitas penuh). Silakan pilih tanggal lain.';
+        }
+
+        // Rule: Siang dan Malam tidak boleh bersamaan
+        $hasSiang = collect($existingSessions)->contains(fn($s) => str_contains($s, 'Siang'));
+        $hasMalam = collect($existingSessions)->contains(fn($s) => str_contains($s, 'Malam'));
+        $newIsSiang = str_contains($newSession, 'Siang');
+        $newIsMalam = str_contains($newSession, 'Malam');
+
+        if ($hasSiang && $newIsMalam) {
+            return 'Tidak bisa memesan Sesi Malam karena Sesi Siang sudah terisi pada tanggal ini. Silakan pilih tanggal lain.';
+        }
+        if ($hasMalam && $newIsSiang) {
+            return 'Tidak bisa memesan Sesi Siang karena Sesi Malam sudah terisi pada tanggal ini. Silakan pilih tanggal lain.';
+        }
+
+        return null; // OK
+    }
+    /**
      * Menampilkan form reservasi dengan daftar paket dan promo.
      */
     public function showForm($id)
@@ -36,24 +103,23 @@ class ReservationController extends Controller
             'customer_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'date' => 'required|date|after_or_equal:today',
-            'time' => 'required',
+            'session_slot' => 'required|in:Sesi Pagi (08:00 - 12:00),Sesi Siang (14:00 - 18:00),Sesi Malam (18:00 - 22:00),Sesi Fullboard (Seharian Penuh)',
             'participants' => 'required|integer|min:1',
             'layout' => 'required|in:theater,classroom,round_table,u_shape',
             'food_package_id' => 'required|exists:food_packages,id',
             'promotion_id' => 'nullable|exists:promotions,id',
+            'residential_type' => 'nullable|in:twin,single',
         ]);
 
         $room = MeetingRoom::findOrFail($request->room_id);
 
-        // Cek double booking: hanya cek reservasi yang sudah dibayar (sukses)
-        $existingReservation = Reservation::where('meeting_room_id', $room->id)
-            ->where('date', $request->date)
-            ->where('status', 'sukses')
-            ->exists();
+        // Cek konflik sesi berdasarkan aturan bisnis
+        $package = FoodPackage::findOrFail($request->food_package_id);
+        $conflictError = $this->checkSessionConflict($room->id, $request->date, $request->session_slot, $package->name);
 
-        if ($existingReservation) {
+        if ($conflictError) {
             return back()->withErrors([
-                'date' => "Ruangan {$room->name} sudah dipesan pada tanggal tersebut. Silakan pilih tanggal lain."
+                'session_slot' => $conflictError
             ])->withInput();
         }
 
@@ -75,9 +141,10 @@ class ReservationController extends Controller
                 'food_package_id' => $request->food_package_id,
                 'promotion_id' => $request->promotion_id,
                 'date' => $request->date,
-                'time' => $request->time,
+                'time' => $request->session_slot,
                 'participants' => $request->participants,
                 'layout' => $request->layout,
+                'residential_type' => $request->residential_type,
             ]
         ]);
 
@@ -140,24 +207,45 @@ class ReservationController extends Controller
             return redirect()->route('rooms.index')->with('error', 'Data reservasi tidak ditemukan');
         }
 
-        // Double-check: cek lagi apakah ruangan masih tersedia di tanggal tersebut
-        // Hanya cek reservasi yang sudah dibayar (sukses)
-        $existingReservation = Reservation::where('meeting_room_id', $reservationData['room_id'])
-            ->where('date', $reservationData['date'])
-            ->where('status', 'sukses')
-            ->exists();
+        // Double-check: cek lagi konflik sesi sebelum membuat reservasi
+        $package = FoodPackage::findOrFail($reservationData['food_package_id']);
+        $conflictError = $this->checkSessionConflict(
+            $reservationData['room_id'],
+            $reservationData['date'],
+            $reservationData['time'],
+            $package->name
+        );
 
-        if ($existingReservation) {
+        if ($conflictError) {
             $room = MeetingRoom::find($reservationData['room_id']);
             session()->forget('reservation_data');
             return redirect()->route('rooms.index')->with('error',
-                "Maaf, ruangan {$room->name} sudah dipesan pada tanggal tersebut oleh orang lain. Silakan pilih tanggal lain."
+                "Maaf, {$conflictError}"
             );
         }
 
-        // Hitung total price
+        // Hitung total price dengan rumus flat untuk paket residential
         $package = FoodPackage::findOrFail($reservationData['food_package_id']);
-        $total = $package->price * $reservationData['participants'];
+        $participants = $reservationData['participants'];
+        $residentialType = $reservationData['residential_type'] ?? null;
+        $packageName = strtolower($package->name);
+
+        if (str_contains($packageName, 'residential full day') && $residentialType === 'twin') {
+            // Residential Full Day (Twin): (235.000 × Peserta) + 315.000
+            $total = (235000 * $participants) + 315000;
+        } elseif (str_contains($packageName, 'residential full day') && $residentialType === 'single') {
+            // Residential Full Day (Single): (235.000 × Peserta) + 415.000
+            $total = (235000 * $participants) + 415000;
+        } elseif (str_contains($packageName, 'residential full board') && $residentialType === 'twin') {
+            // Residential Full Board (Twin): (380.000 × Peserta) + 220.000
+            $total = (380000 * $participants) + 220000;
+        } elseif (str_contains($packageName, 'residential full board') && $residentialType === 'single') {
+            // Residential Full Board (Single): (380.000 × Peserta) + 320.000
+            $total = (380000 * $participants) + 320000;
+        } else {
+            // Paket Non-Residential: Total = Harga Paket × Jumlah Peserta
+            $total = $package->price * $participants;
+        }
 
         // Buat reservation
         $reservation = Reservation::create([
@@ -301,16 +389,42 @@ class ReservationController extends Controller
             'date' => 'required|date',
         ]);
 
-        $isBooked = Reservation::where('meeting_room_id', $request->room_id)
+        // Ambil semua reservasi aktif di tanggal ini
+        $existing = Reservation::where('meeting_room_id', $request->room_id)
             ->where('date', $request->date)
             ->where('status', 'sukses')
-            ->exists();
+            ->get();
+
+        // Cek apakah masih ada slot tersedia
+        $fullyBooked = false;
+        $message = 'Ruangan tersedia pada tanggal ini.';
+        $bookedSessions = [];
+
+        if ($existing->count() > 0) {
+            foreach ($existing as $res) {
+                $resSession = $res->time ?? '';
+                $resPkg = strtolower($res->foodPackage->name ?? '');
+                $bookedSessions[] = $resSession;
+
+                // Jika ada Fullboard/Residential, ruangan penuh
+                if (str_contains($resSession, 'Fullboard') || str_contains($resPkg, 'full board') || str_contains($resPkg, 'residential')) {
+                    $fullyBooked = true;
+                    $message = 'Ruangan sudah dipesan untuk sesi Fullboard/Residential pada tanggal ini.';
+                    break;
+                }
+            }
+
+            // Jika sudah 2 reservasi, penuh
+            if (!$fullyBooked && $existing->count() >= 2) {
+                $fullyBooked = true;
+                $message = 'Ruangan sudah memiliki 2 reservasi pada tanggal ini.';
+            }
+        }
 
         return response()->json([
-            'available' => !$isBooked,
-            'message' => $isBooked
-                ? 'Ruangan sudah dipesan pada tanggal ini. Silakan pilih tanggal lain.'
-                : 'Ruangan tersedia pada tanggal ini.'
+            'available' => !$fullyBooked,
+            'message' => $message,
+            'booked_sessions' => $bookedSessions,
         ]);
     }
 

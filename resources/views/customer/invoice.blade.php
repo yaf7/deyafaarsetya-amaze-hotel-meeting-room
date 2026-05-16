@@ -79,7 +79,7 @@
                     </div>
                     <div class="flex justify-between items-center py-3 border-b border-gray-100">
                         <span class="text-gray-600 flex items-center gap-2">
-                            <i class="fas fa-clock text-primary-400"></i> Waktu Mulai
+                            <i class="fas fa-clock text-primary-400"></i> Sesi
                         </span>
                         <span class="font-semibold text-gray-800">{{ $reservation->time }}</span>
                     </div>

@@ -181,6 +181,120 @@
         opacity: 0.2;
         filter: blur(60px);
     }
+
+    /* ==============================
+       Card Selector (Session, Layout)
+       ============================== */
+    .card-selector {
+        @apply relative flex flex-col items-center justify-center p-3 sm:p-4 border-2 border-gray-200 rounded-xl cursor-pointer transition-all duration-300 bg-white text-center;
+    }
+
+    .card-selector:hover:not(.card-selector--disabled) {
+        @apply border-amber-400 shadow-soft;
+        transform: translateY(-2px);
+    }
+
+    .card-selector--active {
+        @apply border-amber-500 bg-amber-50 shadow-soft;
+    }
+
+    .card-selector--disabled {
+        @apply border-gray-100 bg-gray-50 cursor-not-allowed opacity-50;
+    }
+
+    .card-selector__icon {
+        @apply text-2xl mb-1;
+    }
+
+    .card-selector__label {
+        @apply text-sm font-semibold text-gray-800;
+    }
+
+    .card-selector__sub {
+        @apply text-xs text-gray-500 mt-0.5;
+    }
+
+    .card-selector__badge {
+        @apply text-[10px] font-bold uppercase tracking-wider mt-1.5 px-2 py-0.5 rounded-full;
+    }
+
+    /* ==============================
+       Package Cards
+       ============================== */
+    .package-card {
+        @apply relative flex flex-col p-4 sm:p-5 border-2 border-gray-200 rounded-xl cursor-pointer transition-all duration-300 bg-white;
+    }
+
+    .package-card:hover:not(.package-card--disabled) {
+        @apply border-amber-400 shadow-soft;
+        transform: translateY(-2px);
+    }
+
+    .package-card--active {
+        @apply border-amber-500 bg-amber-50 shadow-soft;
+    }
+
+    .package-card--disabled {
+        @apply border-gray-100 bg-gray-50 cursor-not-allowed opacity-50;
+    }
+
+    .package-card__badge {
+        @apply absolute -top-2.5 left-4 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full;
+    }
+
+    /* ==============================
+       Availability Board
+       ============================== */
+    .avail-board {
+        @apply bg-white rounded-2xl shadow-card p-5 sm:p-6;
+    }
+
+    .avail-cell {
+        @apply flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-lg text-center transition-all duration-200;
+    }
+
+    .avail-cell--available {
+        @apply bg-green-50 border border-green-200;
+    }
+
+    .avail-cell--booked {
+        @apply bg-red-50 border border-red-200;
+    }
+
+    .avail-cell--limited {
+        @apply bg-amber-50 border border-amber-200;
+    }
+
+    .avail-cell--loading {
+        @apply bg-gray-50 border border-gray-200 animate-pulse;
+    }
+
+    /* ==============================
+       Sticky Price Bar
+       ============================== */
+    .sticky-price-bar {
+        @apply fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 py-3 px-4 sm:px-6 transition-transform duration-300;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ==============================
+       Info Box
+       ============================== */
+    .info-box {
+        @apply flex items-start gap-3 p-4 rounded-xl text-sm animate-fade-in;
+    }
+
+    .info-box--info {
+        @apply bg-blue-50 border border-blue-200 text-blue-700;
+    }
+
+    .info-box--hotel {
+        @apply bg-purple-50 border border-purple-200 text-purple-700;
+    }
+
+    .info-box--warning {
+        @apply bg-amber-50 border border-amber-200 text-amber-700;
+    }
 }
 
 @layer utilities {

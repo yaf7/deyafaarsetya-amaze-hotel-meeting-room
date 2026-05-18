@@ -47,6 +47,11 @@
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800 truncate">{{ $room->name }}</h2>
                         <p class="text-gray-500 text-xs sm:text-sm line-clamp-2">{{ $room->facilities }}</p>
                     </div>
+                    <a href="{{ route('rooms.index') }}" class="flex-shrink-0 inline-flex items-center gap-1.5 bg-gray-100 hover:bg-amber-50 text-gray-600 hover:text-amber-600 border border-gray-200 hover:border-amber-300 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200">
+                        <i class="fas fa-exchange-alt text-[10px] sm:text-xs"></i>
+                        <span class="hidden sm:inline">Ganti Ruangan</span>
+                        <span class="sm:hidden">Ganti</span>
+                    </a>
                 </div>
             </div>
 
@@ -103,20 +108,52 @@
                             </div>
                         </div>
 
-                        <!-- Session Slot (menggantikan Waktu Mulai) -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <!-- Session Slot - Card Selector -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
                                 <i class="fas fa-clock text-amber-500 mr-2"></i>Sesi Waktu
                             </label>
-                            <select name="session_slot" id="session-slot" class="input-modern" required>
+                            <!-- Hidden select for form submission (kept for JS logic compatibility) -->
+                            <select name="session_slot" id="session-slot" class="hidden" required>
                                 <option value="">-- Pilih Sesi --</option>
-                                <option value="Sesi Pagi (08:00 - 12:00)" {{ old('session_slot') == 'Sesi Pagi (08:00 - 12:00)' ? 'selected' : '' }}>Sesi Pagi (08:00 - 12:00)</option>
-                                <option value="Sesi Siang (14:00 - 18:00)" {{ old('session_slot') == 'Sesi Siang (14:00 - 18:00)' ? 'selected' : '' }}>Sesi Siang (14:00 - 18:00)</option>
-                                <option value="Sesi Malam (18:00 - 22:00)" {{ old('session_slot') == 'Sesi Malam (18:00 - 22:00)' ? 'selected' : '' }}>Sesi Malam (18:00 - 22:00)</option>
-                                <option value="Sesi Fullboard (Seharian Penuh)" {{ old('session_slot') == 'Sesi Fullboard (Seharian Penuh)' ? 'selected' : '' }}>Sesi Fullboard (Seharian Penuh)</option>
+                                <option value="Sesi Pagi (08:00 - 12:00)" {{ old('session_slot') == 'Sesi Pagi (08:00 - 12:00)' ? 'selected' : '' }}>Pagi</option>
+                                <option value="Sesi Siang (14:00 - 18:00)" {{ old('session_slot') == 'Sesi Siang (14:00 - 18:00)' ? 'selected' : '' }}>Siang</option>
+                                <option value="Sesi Malam (18:00 - 22:00)" {{ old('session_slot') == 'Sesi Malam (18:00 - 22:00)' ? 'selected' : '' }}>Malam</option>
+                                <option value="Sesi Fullboard (Seharian Penuh)" {{ old('session_slot') == 'Sesi Fullboard (Seharian Penuh)' ? 'selected' : '' }}>Fullboard</option>
                             </select>
-                            <!-- Hidden input: digunakan saat dropdown dikunci (disabled) agar value tetap terkirim -->
                             <input type="hidden" name="session_slot" id="session-slot-hidden" disabled value="">
+                            <!-- Visual Card Selector -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="session-cards">
+                                <div class="card-selector" data-session="Sesi Pagi (08:00 - 12:00)" onclick="selectSession(this)">
+                                    <span class="card-selector__icon text-amber-500"><i class="fas fa-sun"></i></span>
+                                    <span class="card-selector__label">Pagi</span>
+                                    <span class="card-selector__sub">08:00 - 12:00</span>
+                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                </div>
+                                <div class="card-selector" data-session="Sesi Siang (14:00 - 18:00)" onclick="selectSession(this)">
+                                    <span class="card-selector__icon text-orange-500"><i class="fas fa-cloud-sun"></i></span>
+                                    <span class="card-selector__label">Siang</span>
+                                    <span class="card-selector__sub">14:00 - 18:00</span>
+                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                </div>
+                                <div class="card-selector" data-session="Sesi Malam (18:00 - 22:00)" onclick="selectSession(this)">
+                                    <span class="card-selector__icon text-indigo-500"><i class="fas fa-moon"></i></span>
+                                    <span class="card-selector__label">Malam</span>
+                                    <span class="card-selector__sub">18:00 - 22:00</span>
+                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                </div>
+                                <div class="card-selector" data-session="Sesi Fullboard (Seharian Penuh)" onclick="selectSession(this)">
+                                    <span class="card-selector__icon text-blue-500"><i class="fas fa-calendar-day"></i></span>
+                                    <span class="card-selector__label">Fullboard</span>
+                                    <span class="card-selector__sub">Seharian Penuh</span>
+                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                </div>
+                            </div>
+                            <!-- Info box for session lock -->
+                            <div id="session-info-box" class="hidden mt-3 info-box info-box--info">
+                                <i class="fas fa-info-circle mt-0.5"></i>
+                                <span id="session-info-text"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -135,103 +172,127 @@
                             </p>
                         </div>
 
-                        <!-- Layout -->
+                        <!-- Layout - Card Selector -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
                                 <i class="fas fa-th-large text-amber-500 mr-2"></i>Layout Ruangan
                             </label>
-                            <select name="layout" id="layout-select" class="input-modern" required>
+                            <select name="layout" id="layout-select" class="hidden" required>
                                 <option value="">-- Pilih Layout --</option>
                                 <option value="theater" {{ old('layout') == 'theater' ? 'selected' : '' }}>Theater</option>
                                 <option value="classroom" {{ old('layout') == 'classroom' ? 'selected' : '' }}>Classroom</option>
                                 <option value="round_table" {{ old('layout') == 'round_table' ? 'selected' : '' }}>Round Table</option>
                                 <option value="u_shape" {{ old('layout') == 'u_shape' ? 'selected' : '' }}>U-Shape</option>
                             </select>
+                            @php $layoutData = $room->layout; @endphp
+                            <div class="grid grid-cols-2 gap-3" id="layout-cards">
+                                <div class="card-selector" data-layout="theater" onclick="selectLayout(this)">
+                                    <span class="card-selector__icon text-red-500"><i class="fas fa-theater-masks"></i></span>
+                                    <span class="card-selector__label">Theater</span>
+                                    <span class="card-selector__sub">Maks {{ $layoutData['theater'] ?? 0 }} orang</span>
+                                </div>
+                                <div class="card-selector" data-layout="classroom" onclick="selectLayout(this)">
+                                    <span class="card-selector__icon text-blue-500"><i class="fas fa-chalkboard-teacher"></i></span>
+                                    <span class="card-selector__label">Classroom</span>
+                                    <span class="card-selector__sub">Maks {{ $layoutData['classroom'] ?? 0 }} orang</span>
+                                </div>
+                                <div class="card-selector" data-layout="round_table" onclick="selectLayout(this)">
+                                    <span class="card-selector__icon text-green-500"><i class="fas fa-circle"></i></span>
+                                    <span class="card-selector__label">Round Table</span>
+                                    <span class="card-selector__sub">Maks {{ $layoutData['round_table'] ?? 0 }} orang</span>
+                                </div>
+                                <div class="card-selector" data-layout="u_shape" onclick="selectLayout(this)">
+                                    <span class="card-selector__icon text-purple-500"><i class="fas fa-vector-square"></i></span>
+                                    <span class="card-selector__label">U-Shape</span>
+                                    <span class="card-selector__sub">Maks {{ $layoutData['u_shape'] ?? 0 }} orang</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Package Section -->
                     <div class="border-t border-gray-200 pt-5 sm:pt-6">
-                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
                             <i class="fas fa-utensils text-green-600"></i>
                             Pilih Paket Meeting
                         </h3>
-                        <p class="text-xs sm:text-sm text-gray-600 mb-4">Pilih salah satu paket catering</p>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-5">Pilih salah satu paket yang sesuai kebutuhan Anda</p>
 
-                        <!-- Mobile: Card Layout -->
-                        <div class="block sm:hidden space-y-3">
+                        <!-- Paket Reguler -->
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-box"></i> Paket Reguler</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                             @foreach ($packages as $pkg)
-                                <label for="package-mobile-{{ $pkg->id }}" 
-                                       class="block p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-amber-400 transition-colors has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
-                                    <div class="flex items-start gap-3">
-                                        <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
-                                            id="package-mobile-{{ $pkg->id }}"
-                                            data-package-name="{{ $pkg->name }}"
-                                            data-package-price="{{ $pkg->price }}"
-                                            class="package-radio h-5 w-5 text-amber-600 mt-0.5" required
-                                            {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex justify-between items-start gap-2">
-                                                <span class="font-semibold text-gray-800">{{ $pkg->name }}</span>
-                                                <span class="package-price-display font-bold text-amber-600 text-sm whitespace-nowrap">Rp{{ number_format($pkg->price, 0, ',', '.') }}</span>
+                                @if (!str_contains(strtolower($pkg->name), 'residential'))
+                                    @php
+                                        $icons = ['half day' => '<i class="fas fa-coffee text-amber-600"></i>', 'full day' => '<i class="fas fa-utensils text-amber-600"></i>', 'full board' => '<i class="fas fa-concierge-bell text-amber-600"></i>'];
+                                        $icon = '<i class="fas fa-box text-amber-600"></i>';
+                                        foreach ($icons as $k => $v) { if (str_contains(strtolower($pkg->name), $k)) { $icon = $v; break; } }
+                                        preg_match('/(\d+)\s*jam/', $pkg->description, $m);
+                                        $dur = isset($m[1]) ? $m[1] . ' jam' : '';
+                                        $parts = explode(':', $pkg->description, 2);
+                                        $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
+                                    @endphp
+                                    <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 cursor-pointer">
+                                        <div class="flex items-start gap-3">
+                                            <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
+                                                data-package-name="{{ $pkg->name }}"
+                                                data-package-price="{{ $pkg->price }}"
+                                                class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" required
+                                                {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-xl">{!! $icon !!}</span>
+                                                    <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
+                                                <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($pkg->price, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
                                             </div>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $pkg->description }}</p>
                                         </div>
-                                    </div>
-                                </label>
+                                    </label>
+                                @endif
                             @endforeach
                         </div>
 
-                        <!-- Desktop: Table Layout -->
-                        <div class="hidden sm:block table-modern overflow-x-auto">
-                            <table class="w-full">
-                                <thead>
-                                    <tr>
-                                        <th class="w-12"></th>
-                                        <th>Jenis Paket</th>
-                                        <th>Durasi</th>
-                                        <th class="hidden lg:table-cell">Fasilitas</th>
-                                        <th class="text-right">Harga/Pax</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($packages as $pkg)
-                                        @php
-                                            $isResidential = str_contains(strtolower($pkg->name), 'residential');
-                                            $duration = '';
-                                            $facilities = $pkg->description;
-                                            if (preg_match('/(\d+)\s*jam/', $pkg->description, $m)) {
-                                                $duration = $m[1] . ' jam';
-                                            }
-                                            if ($isResidential) {
-                                                $duration .= '<br><span class="text-xs text-red-500 font-medium">+ Menginap</span>';
-                                            }
-                                            $parts = explode(':', $pkg->description, 2);
-                                            $facilityText = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
-                                        @endphp
-                                        <tr class="cursor-pointer hover:bg-amber-50" onclick="document.getElementById('package-{{ $pkg->id }}').click()">
-                                            <td class="text-center">
-                                                <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
-                                                    id="package-{{ $pkg->id }}"
-                                                    data-package-name="{{ $pkg->name }}"
-                                                    data-package-price="{{ $pkg->price }}"
-                                                    class="package-radio h-5 w-5 text-amber-600 focus:ring-amber-500 cursor-pointer" required
-                                                    {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
-                                            </td>
-                                            <td>
-                                                <label for="package-{{ $pkg->id }}" class="font-semibold text-gray-800 cursor-pointer">
-                                                    {{ $pkg->name }}
-                                                </label>
-                                            </td>
-                                            <td class="text-gray-600">{!! $duration !!}</td>
-                                            <td class="hidden lg:table-cell text-gray-600 text-sm">{{ $facilityText }}</td>
-                                            <td class="text-right">
-                                                <span class="package-price-display font-bold text-amber-600">Rp{{ number_format($pkg->price, 0, ',', '.') }}</span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <!-- Paket Residential -->
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-bed"></i> Paket Residential <span class="text-gray-400 font-normal normal-case">(Termasuk Menginap)</span></p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            @foreach ($packages as $pkg)
+                                @if (str_contains(strtolower($pkg->name), 'residential'))
+                                    @php
+                                        $icon = '<i class="fas fa-bed text-purple-600"></i>';
+                                        preg_match('/(\d+)\s*jam/', $pkg->description, $m);
+                                        $dur = isset($m[1]) ? $m[1] . ' jam + 1 malam' : '+ 1 malam';
+                                        $parts = explode(':', $pkg->description, 2);
+                                        $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
+                                        // Base price (meeting only) & room addon
+                                        $resBaseMap = [
+                                            'Residential Full Day Meeting' => ['base' => 235000, 'twin' => 315000, 'single' => 415000],
+                                            'Residential Full Board Meeting' => ['base' => 380000, 'twin' => 220000, 'single' => 320000],
+                                        ];
+                                        $resInfo = $resBaseMap[$pkg->name] ?? null;
+                                        $basePrice = $resInfo ? $resInfo['base'] : $pkg->price;
+                                        $roomAddon = $resInfo ? $resInfo['twin'] : 0;
+                                    @endphp
+                                    <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 cursor-pointer">
+                                        <div class="flex items-start gap-3">
+                                            <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
+                                                data-package-name="{{ $pkg->name }}"
+                                                data-package-price="{{ $pkg->price }}"
+                                                class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" required
+                                                {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-xl">{!! $icon !!}</span>
+                                                    <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
+                                                </div>
+                                                <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
+                                                <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($basePrice, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
+                                                <p class="package-room-addon text-xs text-purple-600 mt-0.5">(+ Rp{{ number_format($roomAddon, 0, ',', '.') }} Kamar Transit)</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endif
+                            @endforeach
                         </div>
                     </div>
 
@@ -325,6 +386,20 @@
         </div>
     </section>
 
+    <!-- Sticky Price Bar -->
+    <div id="sticky-price-bar" class="sticky-price-bar hidden">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex-1 min-w-0">
+                <p class="text-xs text-gray-500 truncate">Estimasi Total</p>
+                <p class="font-bold text-lg text-amber-600">Rp<span id="sticky-total">0</span></p>
+                <p class="text-[10px] text-gray-400 truncate"><span id="sticky-detail">-</span></p>
+            </div>
+            <button type="button" onclick="document.getElementById('submit-btn').click()" class="btn-secondary py-2.5 px-6 text-sm whitespace-nowrap">
+                Lanjut <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             const roomId = {{ $room->id }};
@@ -335,253 +410,153 @@
             const dateUnavailableMsg = document.getElementById('date-unavailable-msg');
             const sessionSlot = document.getElementById('session-slot');
             const sessionSlotHidden = document.getElementById('session-slot-hidden');
-
-            // === Sesi & Paket Constants ===
+            const layoutSelect = document.getElementById('layout-select');
             const SESI_PAGI = 'Sesi Pagi (08:00 - 12:00)';
             const SESI_SIANG = 'Sesi Siang (14:00 - 18:00)';
             const SESI_MALAM = 'Sesi Malam (18:00 - 22:00)';
             const SESI_FULLBOARD = 'Sesi Fullboard (Seharian Penuh)';
-
-            // Sesi yang sudah dipesan pada tanggal terpilih
+            const ALL_SESSIONS = [SESI_PAGI, SESI_SIANG, SESI_MALAM, SESI_FULLBOARD];
             let bookedSessions = [];
 
-            // === Cek ketersediaan saat tanggal dipilih ===
-            dateInput.addEventListener('change', function() {
-                const selectedDate = this.value;
-                if (!selectedDate) {
-                    dateAvailability.classList.add('hidden');
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    return;
-                }
-
-                dateAvailability.classList.remove('hidden');
-                dateAvailableMsg.classList.add('hidden');
-                dateUnavailableMsg.classList.add('hidden');
-
-                fetch(`/api/check-availability?room_id=${roomId}&date=${selectedDate}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        dateAvailability.classList.remove('hidden');
-                        // Simpan sesi yang sudah dipesan
-                        bookedSessions = data.booked_sessions || [];
-
-                        if (data.available) {
-                            dateAvailableMsg.classList.remove('hidden');
-                            dateUnavailableMsg.classList.add('hidden');
-                            submitBtn.disabled = false;
-                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        } else {
-                            dateAvailableMsg.classList.add('hidden');
-                            dateUnavailableMsg.classList.remove('hidden');
-                            submitBtn.disabled = true;
-                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                        }
-
-                        // Apply booked session restrictions ke dropdown sesi
-                        applyBookedSessionRestrictions();
-                    })
-                    .catch(error => {
-                        console.error('Error checking availability:', error);
-                    });
-            });
+            // === Card Selectors ===
+            window.selectSession = function(el) {
+                if (el.classList.contains('card-selector--disabled')) return;
+                document.querySelectorAll('#session-cards .card-selector').forEach(c => c.classList.remove('card-selector--active'));
+                el.classList.add('card-selector--active');
+                sessionSlot.value = el.dataset.session;
+                sessionSlotHidden.value = el.dataset.session;
+                syncPackageFromSession();
+            };
+            window.selectLayout = function(el) {
+                document.querySelectorAll('#layout-cards .card-selector').forEach(c => c.classList.remove('card-selector--active'));
+                el.classList.add('card-selector--active');
+                layoutSelect.value = el.dataset.layout;
+                layoutSelect.dispatchEvent(new Event('change'));
+            };
 
             // === Layout capacity ===
-            document.getElementById('layout-select').addEventListener('change', function() {
+            layoutSelect.addEventListener('change', function() {
                 const layoutData = @json($room->layout);
                 const cap = layoutData[this.value] || 0;
                 document.getElementById('max-capacity').textContent = cap;
-                const participantsInput = document.getElementById('participants-input');
-                if (parseInt(participantsInput.value) > cap) {
-                    participantsInput.value = cap;
-                }
+                const pi = document.getElementById('participants-input');
+                if (parseInt(pi.value) > cap) pi.value = cap;
             });
-            document.getElementById('layout-select').dispatchEvent(new Event('change'));
 
-            // === Harga paket residential dinamis ===
-            const PRICE_MAP = {
-                'Residential Full Day Meeting': { twin: 550000, single: 650000 },
-                'Residential Full Board Meeting': { twin: 600000, single: 700000 }
-            };
+            // === Date availability ===
+            dateInput.addEventListener('change', function() {
+                const d = this.value;
+                if (!d) { dateAvailability.classList.add('hidden'); return; }
+                dateAvailability.classList.remove('hidden');
+                dateAvailableMsg.classList.add('hidden');
+                dateUnavailableMsg.classList.add('hidden');
+                fetch(`/api/check-availability?room_id=${roomId}&date=${d}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        bookedSessions = data.booked_sessions || [];
+                        if (data.available) {
+                            dateAvailableMsg.classList.remove('hidden');
+                            submitBtn.disabled = false; submitBtn.classList.remove('opacity-50','cursor-not-allowed');
+                        } else {
+                            dateUnavailableMsg.classList.remove('hidden');
+                            submitBtn.disabled = true; submitBtn.classList.add('opacity-50','cursor-not-allowed');
+                        }
+                        applyBookedSessionRestrictions();
+                    }).catch(e => console.error(e));
+            });
 
-            const CALC_MAP = {
-                'Residential Full Day Meeting': { base: 235000, twin_addon: 315000, single_addon: 415000 },
-                'Residential Full Board Meeting': { base: 380000, twin_addon: 220000, single_addon: 320000 }
-            };
-
-            const residentialSection = document.getElementById('residential-type-section');
-            const priceEstimation = document.getElementById('price-estimation');
-
-            function isResidential(name) {
-                return name && name.toLowerCase().includes('residential');
+            // === Session card badges ===
+            function updateSessionCards(disabledList) {
+                document.querySelectorAll('#session-cards .card-selector').forEach(card => {
+                    const val = card.dataset.session;
+                    const badge = card.querySelector('.session-badge');
+                    if (disabledList.includes(val)) {
+                        card.classList.add('card-selector--disabled');
+                        card.classList.remove('card-selector--active');
+                        if (badge) { badge.textContent = 'Penuh'; badge.className = 'card-selector__badge bg-red-100 text-red-700 session-badge'; }
+                    } else {
+                        card.classList.remove('card-selector--disabled');
+                        if (badge) { badge.textContent = 'Tersedia'; badge.className = 'card-selector__badge bg-green-100 text-green-700 session-badge'; }
+                    }
+                });
             }
 
-            function isHalfDay(name) {
-                return name && name.toLowerCase().includes('half day');
-            }
-
-            function isFullDayOrMore(name) {
-                if (!name) return false;
-                const n = name.toLowerCase();
-                return n.includes('full day') || n.includes('full board') || n.includes('residential');
-            }
-
-            function getSelectedPackage() {
-                const checked = document.querySelector('input[name="food_package_id"]:checked');
-                if (!checked) return null;
-                return {
-                    id: checked.value,
-                    name: checked.dataset.packageName,
-                    price: parseInt(checked.dataset.packagePrice)
-                };
-            }
-
-            function getResidentialType() {
-                const checked = document.querySelector('input[name="residential_type"]:checked');
-                return checked ? checked.value : 'twin';
-            }
-
-            function formatRupiah(num) {
-                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            }
-
-            // === Session ↔ Package Interlocking ===
-
-            /**
-             * Disable sesi yang sudah dipesan + terapkan aturan konflik Siang↔Malam
-             */
+            // === Session restrictions ===
             function applyBookedSessionRestrictions() {
                 const pkg = getSelectedPackage();
-
-                // Jika paket Full Day+ sudah dikunci ke Fullboard, tidak perlu atur lagi
                 if (pkg && isFullDayOrMore(pkg.name)) return;
-
-                // Enable semua dulu, lalu disable sesuai aturan
                 enableAllSessionOptions();
-
-                // Selalu disable Fullboard untuk Half Day
-                if (pkg && isHalfDay(pkg.name)) {
-                    disableSessionOption(SESI_FULLBOARD);
-                }
-
-                // Disable sesi yang sudah dipesan
-                bookedSessions.forEach(s => {
-                    disableSessionOption(s);
-                });
-
-                // Aturan konflik: Siang & Malam tidak boleh bersamaan
-                const hasSiang = bookedSessions.some(s => s.includes('Siang'));
-                const hasMalam = bookedSessions.some(s => s.includes('Malam'));
-                if (hasSiang) disableSessionOption(SESI_MALAM);
-                if (hasMalam) disableSessionOption(SESI_SIANG);
-
-                // Jika ada Fullboard yang sudah dipesan, semua sesi di-disable
-                const hasFullboard = bookedSessions.some(s => s.includes('Fullboard'));
-                if (hasFullboard) {
-                    disableSessionOption(SESI_PAGI);
-                    disableSessionOption(SESI_SIANG);
-                    disableSessionOption(SESI_MALAM);
-                    disableSessionOption(SESI_FULLBOARD);
-                }
-
-                // Reset pilihan jika sesi terpilih sekarang di-disable
-                const currentOpt = sessionSlot.querySelector(`option[value="${sessionSlot.value}"]`);
-                if (currentOpt && currentOpt.disabled) {
-                    sessionSlot.value = '';
-                }
+                let disabled = [];
+                if (pkg && isHalfDay(pkg.name)) { disableSessionOption(SESI_FULLBOARD); disabled.push(SESI_FULLBOARD); }
+                bookedSessions.forEach(s => { disableSessionOption(s); disabled.push(s); });
+                if (bookedSessions.some(s => s.includes('Siang'))) { disableSessionOption(SESI_MALAM); disabled.push(SESI_MALAM); }
+                if (bookedSessions.some(s => s.includes('Malam'))) { disableSessionOption(SESI_SIANG); disabled.push(SESI_SIANG); }
+                if (bookedSessions.some(s => s.includes('Fullboard'))) { ALL_SESSIONS.forEach(s => { disableSessionOption(s); disabled.push(s); }); }
+                updateSessionCards([...new Set(disabled)]);
+                const active = document.querySelector('#session-cards .card-selector--active');
+                if (active && active.classList.contains('card-selector--disabled')) { active.classList.remove('card-selector--active'); sessionSlot.value = ''; }
             }
 
-            /**
-             * Saat PAKET berubah → atur opsi dropdown sesi
-             */
             function syncSessionFromPackage() {
                 const pkg = getSelectedPackage();
-                if (!pkg) {
-                    enableAllSessionOptions();
-                    unlockSessionDropdown();
-                    applyBookedSessionRestrictions();
-                    return;
-                }
-
+                const infoBox = document.getElementById('session-info-box');
+                const infoText = document.getElementById('session-info-text');
+                if (!pkg) { enableAllSessionOptions(); unlockSessionDropdown(); applyBookedSessionRestrictions(); infoBox.classList.add('hidden'); return; }
                 if (isHalfDay(pkg.name)) {
-                    // Half Day: Pagi, Siang, Malam terbuka (Fullboard di-disable)
-                    enableAllSessionOptions();
-                    disableSessionOption(SESI_FULLBOARD);
-                    unlockSessionDropdown();
-
-                    // Terapkan restricsi dari sesi yg sudah dipesan
-                    applyBookedSessionRestrictions();
-
-                    // Reset jika sesi terpilih adalah Fullboard
-                    if (sessionSlot.value === SESI_FULLBOARD) {
-                        sessionSlot.value = '';
-                    }
+                    enableAllSessionOptions(); disableSessionOption(SESI_FULLBOARD); unlockSessionDropdown();
+                    applyBookedSessionRestrictions(); infoBox.classList.add('hidden');
+                    if (sessionSlot.value === SESI_FULLBOARD) { sessionSlot.value = ''; document.querySelectorAll('#session-cards .card-selector').forEach(c => c.classList.remove('card-selector--active')); }
                 } else if (isFullDayOrMore(pkg.name)) {
-                    // Full Day / Full Board / Residential: paksa Fullboard & kunci
-                    enableAllSessionOptions();
-                    sessionSlot.value = SESI_FULLBOARD;
-                    lockSessionDropdown(SESI_FULLBOARD);
+                    enableAllSessionOptions(); sessionSlot.value = SESI_FULLBOARD; lockSessionDropdown(SESI_FULLBOARD);
+                    document.querySelectorAll('#session-cards .card-selector').forEach(c => c.classList.remove('card-selector--active'));
+                    const fb = document.querySelector('#session-cards [data-session="' + SESI_FULLBOARD + '"]');
+                    if (fb) fb.classList.add('card-selector--active');
+                    updateSessionCards([SESI_PAGI, SESI_SIANG, SESI_MALAM]);
+                    infoBox.classList.remove('hidden'); infoBox.className = 'mt-3 info-box ' + (isResidential(pkg.name) ? 'info-box--hotel' : 'info-box--info');
+                    infoText.textContent = isResidential(pkg.name)
+                        ? 'ðŸ¨ Paket Residential menggunakan ruangan seharian penuh dan termasuk 1 malam menginap di Superior Room.'
+                        : 'â„¹ï¸ Paket ini menggunakan ruangan seharian penuh. Sesi otomatis disetel ke Fullboard.';
                 }
             }
 
-            /**
-             * Saat SESI berubah → semua paket tetap bisa dipilih
-             */
             function syncPackageFromSession() {
-                // Enable semua paket untuk semua sesi (Pagi, Siang, Malam)
-                document.querySelectorAll('.package-radio').forEach(radio => {
-                    radio.disabled = false;
-                    const container = radio.closest('tr') || radio.closest('label');
-                    if (container) container.classList.remove('opacity-40', 'pointer-events-none');
-                });
-
+                document.querySelectorAll('.package-radio').forEach(r => { r.disabled = false; const l = r.closest('label'); if (l) l.classList.remove('opacity-40','pointer-events-none'); });
                 calculateTotal();
             }
 
-            function enableAllSessionOptions() {
-                sessionSlot.querySelectorAll('option').forEach(opt => {
-                    opt.disabled = false;
-                    opt.classList.remove('hidden');
-                });
-            }
+            function enableAllSessionOptions() { sessionSlot.querySelectorAll('option').forEach(o => o.disabled = false); }
+            function disableSessionOption(v) { const o = sessionSlot.querySelector(`option[value="${v}"]`); if (o) o.disabled = true; }
+            function lockSessionDropdown(v) { sessionSlot.value = v; sessionSlot.disabled = true; sessionSlotHidden.value = v; sessionSlotHidden.disabled = false; }
+            function unlockSessionDropdown() { sessionSlot.disabled = false; sessionSlotHidden.disabled = true; }
 
-            function disableSessionOption(value) {
-                const opt = sessionSlot.querySelector(`option[value="${value}"]`);
-                if (opt) {
-                    opt.disabled = true;
-                }
-            }
+            // === Price helpers ===
+            const PRICE_MAP = { 'Residential Full Day Meeting': { twin: 550000, single: 650000 }, 'Residential Full Board Meeting': { twin: 600000, single: 700000 } };
+            const CALC_MAP = { 'Residential Full Day Meeting': { base: 235000, twin_addon: 315000, single_addon: 415000 }, 'Residential Full Board Meeting': { base: 380000, twin_addon: 220000, single_addon: 320000 } };
+            const residentialSection = document.getElementById('residential-type-section');
+            const priceEstimation = document.getElementById('price-estimation');
 
-            function lockSessionDropdown(value) {
-                sessionSlot.value = value;
-                sessionSlot.disabled = true;
-                // Use hidden input to still submit the value
-                sessionSlotHidden.value = value;
-                sessionSlotHidden.disabled = false;
-            }
-
-            function unlockSessionDropdown() {
-                sessionSlot.disabled = false;
-                // Disable hidden input so it doesn't override
-                sessionSlotHidden.disabled = true;
-            }
-
-            // === Price Display & Estimation ===
+            function isResidential(n) { return n && n.toLowerCase().includes('residential'); }
+            function isHalfDay(n) { return n && n.toLowerCase().includes('half day'); }
+            function isFullDayOrMore(n) { if (!n) return false; const l = n.toLowerCase(); return l.includes('full day') || l.includes('full board') || l.includes('residential'); }
+            function getSelectedPackage() { const c = document.querySelector('input[name="food_package_id"]:checked'); return c ? { id: c.value, name: c.dataset.packageName, price: parseInt(c.dataset.packagePrice) } : null; }
+            function getResidentialType() { const c = document.querySelector('input[name="residential_type"]:checked'); return c ? c.value : 'twin'; }
+            function formatRupiah(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
             function updatePriceDisplay() {
-                const pkg = getSelectedPackage();
-                if (!pkg) return;
-
-                if (isResidential(pkg.name) && PRICE_MAP[pkg.name]) {
+                const pkg = getSelectedPackage(); if (!pkg) return;
+                if (isResidential(pkg.name) && CALC_MAP[pkg.name]) {
                     const resType = getResidentialType();
-                    const displayPrice = PRICE_MAP[pkg.name][resType];
-
-                    document.querySelectorAll('input[name="food_package_id"]').forEach(radio => {
-                        if (radio.dataset.packageName === pkg.name) {
-                            const label = radio.closest('tr') || radio.closest('label');
-                            if (label) {
-                                const priceEl = label.querySelector('.package-price-display');
-                                if (priceEl) priceEl.textContent = 'Rp' + formatRupiah(displayPrice);
+                    const calc = CALC_MAP[pkg.name];
+                    const basePrice = calc.base;
+                    const roomAddon = resType === 'twin' ? calc.twin_addon : calc.single_addon;
+                    document.querySelectorAll('input[name="food_package_id"]').forEach(r => {
+                        if (r.dataset.packageName === pkg.name) {
+                            const l = r.closest('label');
+                            if (l) {
+                                const p = l.querySelector('.package-price-display');
+                                if (p) p.innerHTML = 'Rp' + formatRupiah(basePrice) + '<span class="text-xs font-normal text-gray-400">/pax</span>';
+                                const a = l.querySelector('.package-room-addon');
+                                if (a) a.textContent = '(+ Rp' + formatRupiah(roomAddon) + ' Kamar Transit)';
                             }
                         }
                     });
@@ -591,80 +566,45 @@
             function calculateTotal() {
                 const pkg = getSelectedPackage();
                 const participants = parseInt(document.getElementById('participants-input').value) || 0;
-
-                if (!pkg || participants < 1) {
-                    priceEstimation.classList.add('hidden');
-                    return;
-                }
-
-                priceEstimation.classList.remove('hidden');
-
-                let total = 0;
-                let pricePerPax = pkg.price;
-                let roomAddon = 0;
+                const stickyBar = document.getElementById('sticky-price-bar');
+                if (!pkg || participants < 1) { priceEstimation.classList.add('hidden'); stickyBar.classList.add('hidden'); return; }
+                priceEstimation.classList.remove('hidden'); stickyBar.classList.remove('hidden');
+                let total = 0, pricePerPax = pkg.price, roomAddon = 0;
                 const estRoomAddon = document.getElementById('est-room-addon');
-
                 if (isResidential(pkg.name) && CALC_MAP[pkg.name]) {
-                    const resType = getResidentialType();
-                    const calc = CALC_MAP[pkg.name];
-                    pricePerPax = PRICE_MAP[pkg.name][resType];
-                    roomAddon = resType === 'twin' ? calc.twin_addon : calc.single_addon;
+                    const rt = getResidentialType(), calc = CALC_MAP[pkg.name];
+                    pricePerPax = calc.base; roomAddon = rt === 'twin' ? calc.twin_addon : calc.single_addon;
                     total = (calc.base * participants) + roomAddon;
-
-                    estRoomAddon.classList.remove('hidden');
-                    document.getElementById('est-room-cost').textContent = formatRupiah(roomAddon);
-                } else {
-                    total = pkg.price * participants;
-                    estRoomAddon.classList.add('hidden');
-                }
-
+                    estRoomAddon.classList.remove('hidden'); document.getElementById('est-room-cost').textContent = formatRupiah(roomAddon);
+                } else { total = pkg.price * participants; estRoomAddon.classList.add('hidden'); }
                 document.getElementById('est-package-name').textContent = pkg.name;
                 document.getElementById('est-price-per-pax').textContent = formatRupiah(pricePerPax);
                 document.getElementById('est-participants').textContent = participants;
                 document.getElementById('est-total').textContent = formatRupiah(total);
+                document.getElementById('sticky-total').textContent = formatRupiah(total);
+                document.getElementById('sticky-detail').textContent = `${participants} pax Ã— ${pkg.name}`;
             }
 
-            // === Event Listeners ===
-
-            // Paket dipilih → sync sesi + residential + harga
-            document.querySelectorAll('.package-radio').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const name = this.dataset.packageName;
-                    if (isResidential(name)) {
-                        residentialSection.classList.remove('hidden');
-                    } else {
-                        residentialSection.classList.add('hidden');
-                    }
-                    syncSessionFromPackage();
-                    updatePriceDisplay();
-                    calculateTotal();
-                });
-            });
-
-            // Sesi dipilih → sync paket
-            sessionSlot.addEventListener('change', function() {
-                syncPackageFromSession();
-            });
-
-            // Residential type berubah
-            document.querySelectorAll('.residential-radio').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    updatePriceDisplay();
-                    calculateTotal();
-                });
-            });
-
-            // Jumlah peserta berubah
+            // === Events ===
+            document.querySelectorAll('.package-radio').forEach(r => r.addEventListener('change', function() {
+                if (isResidential(this.dataset.packageName)) residentialSection.classList.remove('hidden'); else residentialSection.classList.add('hidden');
+                syncSessionFromPackage(); updatePriceDisplay(); calculateTotal();
+            }));
+            sessionSlot.addEventListener('change', syncPackageFromSession);
+            document.querySelectorAll('.residential-radio').forEach(r => r.addEventListener('change', () => { updatePriceDisplay(); calculateTotal(); }));
             document.getElementById('participants-input').addEventListener('input', calculateTotal);
 
-            // Init on page load (untuk old() values)
-            const initialPkg = document.querySelector('input[name="food_package_id"]:checked');
-            if (initialPkg) {
-                initialPkg.dispatchEvent(new Event('change'));
-            }
-            if (sessionSlot.value) {
-                syncPackageFromSession();
-            }
+            // === Pre-fill from URL (availability board) ===
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('date')) { dateInput.value = urlParams.get('date'); dateInput.dispatchEvent(new Event('change')); }
+            if (urlParams.get('session')) { setTimeout(() => { const c = document.querySelector(`#session-cards [data-session="${urlParams.get('session')}"]`); if (c && !c.classList.contains('card-selector--disabled')) selectSession(c); }, 600); }
+
+            // === Init ===
+            const initPkg = document.querySelector('input[name="food_package_id"]:checked');
+            if (initPkg) initPkg.dispatchEvent(new Event('change'));
+            if (sessionSlot.value) syncPackageFromSession();
+            if (layoutSelect.value) { const lc = document.querySelector(`#layout-cards [data-layout="${layoutSelect.value}"]`); if (lc) lc.classList.add('card-selector--active'); layoutSelect.dispatchEvent(new Event('change')); }
+            if (sessionSlot.value) { const sc = document.querySelector(`#session-cards [data-session="${sessionSlot.value}"]`); if (sc) sc.classList.add('card-selector--active'); }
         </script>
     @endpush
 </x-app-layout>

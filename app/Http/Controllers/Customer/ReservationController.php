@@ -258,6 +258,8 @@ class ReservationController extends Controller
             'date' => $reservationData['date'],
             'time' => $reservationData['time'],
             'participants' => $reservationData['participants'],
+            'layout' => $reservationData['layout'] ?? null,
+            'residential_type' => $reservationData['residential_type'] ?? null,
             'total_price' => $total,
             'status' => 'pending'
         ]);

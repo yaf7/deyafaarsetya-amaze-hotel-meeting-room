@@ -440,7 +440,7 @@
                     . "📋 *KONFIRMASI RESERVASI #" . str_pad($reservation->id, 6, '0', STR_PAD_LEFT) . "*\n"
                     . "━━━━━━━━━━━━━━━━━━\n"
                     . "📅 Tanggal: {$tanggal}\n"
-                    . "🕐 Waktu: {$reservation->time} WIB\n"
+                    . "🕐 Sesi: {$reservation->time}\n"
                     . "🏨 Ruangan: {$reservation->meetingRoom->name}\n"
                     . "👥 Peserta: {$reservation->participants} orang\n"
                     . "🍽️ Paket: {$reservation->foodPackage->name}\n\n"

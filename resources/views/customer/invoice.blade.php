@@ -89,6 +89,22 @@
                         </span>
                         <span class="font-semibold text-gray-800">{{ $reservation->participants }} orang</span>
                     </div>
+                    @if($reservation->layout)
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-gray-600 flex items-center gap-2">
+                            <i class="fas fa-th-large text-primary-400"></i> Layout
+                        </span>
+                        <span class="font-semibold text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservation->layout)) }}</span>
+                    </div>
+                    @endif
+                    @if($reservation->residential_type)
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-gray-600 flex items-center gap-2">
+                            <i class="fas fa-bed text-purple-400"></i> Tipe Kamar
+                        </span>
+                        <span class="font-semibold text-purple-700">{{ $reservation->residential_type === 'twin' ? 'Twin Sharing' : 'Single Occupancy' }}</span>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Fasilitas Ruangan -->

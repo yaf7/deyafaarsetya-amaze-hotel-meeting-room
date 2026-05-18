@@ -77,8 +77,8 @@
                     <p class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($reservation->date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</p>
                 </div>
                 <div class="bg-gray-50 rounded-xl p-4">
-                    <p class="text-xs text-gray-500 mb-1">Waktu</p>
-                    <p class="font-semibold text-gray-800">{{ $reservation->time }} WIB</p>
+                    <p class="text-xs text-gray-500 mb-1">Sesi</p>
+                    <p class="font-semibold text-gray-800">{{ $reservation->time }}</p>
                 </div>
             </div>
         </div>
@@ -100,6 +100,15 @@
                     <p class="text-xs text-gray-500 mb-1">Paket Makanan</p>
                     <p class="font-semibold text-gray-800">{{ $reservation->foodPackage->name }}</p>
                 </div>
+                @if($reservation->residential_type)
+                    <div class="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                        <p class="text-xs text-purple-700 mb-1">Tipe Kamar Menginap</p>
+                        <p class="font-semibold text-purple-800 flex items-center gap-2">
+                            <i class="fas fa-bed text-xs"></i>
+                            {{ $reservation->residential_type === 'twin' ? 'Twin Sharing (1 kamar untuk 2 orang)' : 'Single Occupancy (1 kamar untuk 1 orang)' }}
+                        </p>
+                    </div>
+                @endif
                 @if($reservation->promotion)
                     <div class="bg-amber-50 rounded-xl p-4 border border-amber-200">
                         <p class="text-xs text-amber-700 mb-1">Promo Aktif</p>
@@ -110,6 +119,38 @@
                     </div>
                 @endif
             </div>
+
+            {{-- Rincian Harga untuk Paket Residential --}}
+            @php
+                $pkgName = strtolower($reservation->foodPackage->name ?? '');
+                $isResidential = str_contains($pkgName, 'residential');
+                $resBaseMap = [
+                    'residential full day meeting' => ['base' => 235000, 'twin' => 315000, 'single' => 415000],
+                    'residential full board meeting' => ['base' => 380000, 'twin' => 220000, 'single' => 320000],
+                ];
+                $resInfo = $resBaseMap[$pkgName] ?? null;
+            @endphp
+            @if($isResidential && $resInfo)
+                <div class="mt-4 bg-purple-50 rounded-xl p-4 border border-purple-100">
+                    <p class="text-xs font-bold text-purple-700 uppercase tracking-wider mb-3">
+                        <i class="fas fa-calculator mr-1"></i> Rincian Harga Residential
+                    </p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Harga Meeting /pax</span>
+                            <span class="font-semibold text-gray-800">Rp{{ number_format($resInfo['base'], 0, ',', '.') }} × {{ $reservation->participants }} orang</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Biaya Kamar Transit ({{ $reservation->residential_type === 'single' ? 'Single' : 'Twin' }})</span>
+                            <span class="font-semibold text-gray-800">+ Rp{{ number_format($resInfo[$reservation->residential_type ?? 'twin'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-purple-200">
+                            <span class="font-bold text-gray-800">Subtotal</span>
+                            <span class="font-bold text-amber-600">Rp{{ number_format($reservation->total_price, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Fasilitas Ruangan -->

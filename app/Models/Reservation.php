@@ -16,6 +16,8 @@ class Reservation extends Model
         'date',
         'time',
         'participants',
+        'layout',
+        'residential_type',
         'total_price',
         'status',
         'whatsapp_sent',

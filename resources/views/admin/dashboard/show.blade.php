@@ -46,7 +46,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="bg-gray-50 rounded-xl p-4">
                     <p class="text-xs text-gray-500 mb-1">Nama Pemesan</p>
-                    <p class="font-semibold text-gray-800">{{ $reservation->customer_name }}</p>
+                    <p class="font-semibold text-gray-800">
+                        {{ $reservation->customer_name }}
+                        @if($reservation->customer && $reservation->customer->company_name)
+                            <span class="text-sm font-normal text-gray-500">({{ $reservation->customer->company_name }})</span>
+                        @endif
+                    </p>
                 </div>
                 <div class="bg-gray-50 rounded-xl p-4">
                     <p class="text-xs text-gray-500 mb-1">Nomor Telepon</p>

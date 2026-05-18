@@ -17,6 +17,8 @@
             font-family: 'Playfair Display', serif;
         }
     </style>
+    <!-- AlpineJS for interactive dropdowns -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -54,10 +56,59 @@
                         </a>
                     </div>
 
-                    <!-- CTA Button - Elegant -->
-                    <div class="hidden md:block">
+                    <!-- CTA & Auth Button - Elegant -->
+                    <div class="hidden md:flex items-center gap-4">
+                        @if(auth('customer')->check())
+                            @php $user = auth('customer')->user(); @endphp
+                            <!-- Account Dropdown -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" @click.outside="open = false" 
+                                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-amber-500 transition-all shadow-sm">
+                                    @if($user->photo)
+                                        <img src="{{ asset('storage/' . $user->photo) }}" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-amber-100">
+                                    @else
+                                        <div class="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 font-bold text-xs">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <span class="text-sm font-semibold text-gray-700 max-w-[120px] truncate">{{ $user->name }}</span>
+                                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                                </button>
+
+                                <!-- Dropdown Menu -->
+                                <div x-show="open" 
+                                    x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                    class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50"
+                                    style="display: none;">
+                                    <div class="px-4 py-2 border-b border-gray-50">
+                                        <p class="text-xs text-gray-400">Selamat datang,</p>
+                                        <p class="text-sm font-bold text-gray-800 truncate">{{ $user->name }}</p>
+                                    </div>
+                                    <a href="{{ route('customer.profile') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors">
+                                        <i class="fas fa-user text-xs w-4"></i>
+                                        <span>Profil Saya</span>
+                                    </a>
+                                    <form action="{{ route('customer.logout') }}" method="POST" class="block m-0">
+                                        @csrf
+                                        <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left border-0 bg-transparent cursor-pointer">
+                                            <i class="fas fa-sign-out-alt text-xs w-4"></i>
+                                            <span>Keluar Akun</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @else
+                            <a href="{{ route('login') }}" class="text-sm font-semibold text-gray-600 hover:text-amber-600 transition-colors">Masuk</a>
+                            <a href="{{ route('customer.register') }}" class="px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold rounded-full hover:bg-amber-100 transition-all">Daftar</a>
+                        @endif
+
                         <a href="/rooms"
-                            class="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white font-medium text-sm rounded-full hover:bg-amber-600 transition-all duration-300 shadow-sm hover:shadow-md">
+                            class="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white font-semibold text-sm rounded-full hover:bg-amber-600 transition-all duration-300 shadow-sm hover:shadow-md">
                             <span>Reservasi</span>
                             <i class="fas fa-arrow-right text-xs"></i>
                         </a>
@@ -76,6 +127,32 @@
             <!-- Mobile Menu - Clean -->
             <div class="md:hidden hidden bg-white border-t border-gray-100" id="mobile-menu">
                 <div class="px-4 py-4 space-y-1">
+                    @if(auth('customer')->check())
+                        @php $user = auth('customer')->user(); @endphp
+                        <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100 mb-2">
+                            @if($user->photo)
+                                <img src="{{ asset('storage/' . $user->photo) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-amber-100">
+                            @else
+                                <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 font-bold">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                            @endif
+                            <div>
+                                <p class="text-sm font-bold text-gray-800">{{ $user->name }}</p>
+                                <p class="text-xs text-gray-500">{{ $user->email }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('customer.profile') }}"
+                            class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-user-circle mr-2 text-gray-400"></i> Profil Saya
+                        </a>
+                    @else
+                        <div class="grid grid-cols-2 gap-2 px-4 py-2 border-b border-gray-100 mb-2">
+                            <a href="{{ route('login') }}" class="text-center py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg transition-colors">Masuk</a>
+                            <a href="{{ route('customer.register') }}" class="text-center py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors">Daftar</a>
+                        </div>
+                    @endif
+
                     <a href="/"
                         class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
                         Beranda
@@ -89,6 +166,16 @@
                         class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
                         Kontak
                     </a>
+
+                    @if(auth('customer')->check())
+                        <form action="{{ route('customer.logout') }}" method="POST" class="block pt-2 m-0">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors border-0 bg-transparent cursor-pointer">
+                                <i class="fas fa-sign-out-alt mr-2 text-red-400"></i> Keluar Akun
+                            </button>
+                        </form>
+                    @endif
+
                     <div class="pt-3 px-4">
                         <a href="/rooms"
                             class="block w-full text-center py-3 bg-amber-500 text-white font-medium rounded-full hover:bg-amber-600 transition-colors">

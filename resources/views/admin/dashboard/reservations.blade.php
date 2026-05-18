@@ -174,7 +174,12 @@
                             <td class="px-5 py-4">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <p class="font-semibold text-gray-800 text-sm">{{ $res->customer_name }}</p>
+                                        <p class="font-semibold text-gray-800 text-sm">
+                                            {{ $res->customer_name }}
+                                            @if($res->customer && $res->customer->company_name)
+                                                <span class="text-xs font-normal text-gray-500">({{ $res->customer->company_name }})</span>
+                                            @endif
+                                        </p>
                                         @if($res->whatsapp_sent)
                                             <i class="fab fa-whatsapp text-blue-500 text-[12px]" title="WhatsApp Terkirim"></i>
                                         @endif

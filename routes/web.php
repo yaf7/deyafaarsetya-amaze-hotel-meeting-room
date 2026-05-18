@@ -12,20 +12,42 @@ use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Customer\PaymentController;
 
+use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+
 // === Rute Publik (Pelanggan) ===
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/rooms', [RoomController::class, 'index'])->name('rooms.index');
-Route::get('/rooms/{id}/reserve', [ReservationController::class, 'showForm'])->name('reservation.form');
-Route::post('/reservations', [ReservationController::class, 'store'])->name('reservation.store');
-Route::get('/reservation/buffet-selection', [ReservationController::class, 'showBuffetSelection'])->name('reservation.buffet.selection');
-Route::post('/reservation/buffet-selection', [ReservationController::class, 'storeBuffetSelection'])->name('reservation.buffet.store');
-Route::get('/reservations/{id}/confirmation', [ReservationController::class, 'confirmation'])->name('reservation.confirmation');
-Route::get('/payment/simulate/{id}', [ReservationController::class, 'simulatePayment'])->name('payment.simulate');
+
+use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
+
+// Autentikasi Pelanggan
+Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [CustomerAuthController::class, 'login'])->name('customer.login.submit');
+Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('customer.register');
+Route::post('/register', [CustomerAuthController::class, 'register'])->name('customer.register.submit');
+Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('customer.logout');
+
+// Rute yang membutuhkan login pelanggan
+Route::middleware('auth:customer')->group(function () {
+    // Pengaturan Profil
+    Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile');
+    Route::put('/profile', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
+
+    // Reservasi
+    Route::get('/rooms/{id}/reserve', [ReservationController::class, 'showForm'])->name('reservation.form');
+    Route::post('/reservations', [ReservationController::class, 'store'])->name('reservation.store');
+    Route::get('/reservation/buffet-selection', [ReservationController::class, 'showBuffetSelection'])->name('reservation.buffet.selection');
+    Route::post('/reservation/buffet-selection', [ReservationController::class, 'storeBuffetSelection'])->name('reservation.buffet.store');
+    Route::get('/reservations/{id}/confirmation', [ReservationController::class, 'confirmation'])->name('reservation.confirmation');
+    Route::get('/payment/simulate/{id}', [ReservationController::class, 'simulatePayment'])->name('payment.simulate');
+    Route::get('/reservations/{id}/invoice', [ReservationController::class, 'invoice'])->name('reservation.invoice');
+});
+
 Route::post('/payment/notification', [PaymentController::class, 'callback'])->name('payment.notification');
 Route::post('/midtrans/callback', [PaymentController::class, 'callback'])->name('midtrans.callback');
 Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
 Route::get('/payment/{id}', [PaymentController::class, 'pay'])->name('payment.pay');
-Route::get('/reservations/{id}/invoice', [ReservationController::class, 'invoice'])->name('reservation.invoice');
+
 Route::get('/api/check-availability', [ReservationController::class, 'checkAvailability'])->name('api.check-availability');
 Route::get('/api/booked-dates/{roomId}', [ReservationController::class, 'getBookedDates'])->name('api.booked-dates');
 
@@ -41,6 +63,7 @@ Route::get('/contact', function () {
 })->name('contact');
 
 // === Rute Admin ===
+Route::redirect('/admin', '/admin/dashboard');
 Route::prefix('admin')->group(function () {
     // Login & Logout (publik)
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('admin.login');
@@ -109,5 +132,4 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-//SOLUSI: Redirect route 'login' ke login admin
-Route::redirect('/login', '/admin/login')->name('login');
+// Route::redirect('/login', '/admin/login')->name('login');

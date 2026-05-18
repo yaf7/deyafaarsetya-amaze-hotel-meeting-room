@@ -69,25 +69,25 @@
                                 <th class="text-left py-3 px-4 text-sm font-bold text-gray-700 w-1/5">Ruangan</th>
                                 <th class="text-center py-3 px-3 text-sm font-bold text-gray-700">
                                     <div class="flex flex-col items-center">
-                                        <span>🌅 Pagi</span>
+                                        <span> Pagi</span>
                                         <span class="text-[10px] text-gray-400 font-normal">08:00 - 12:00</span>
                                     </div>
                                 </th>
                                 <th class="text-center py-3 px-3 text-sm font-bold text-gray-700">
                                     <div class="flex flex-col items-center">
-                                        <span>☀️ Siang</span>
+                                        <span> Siang</span>
                                         <span class="text-[10px] text-gray-400 font-normal">14:00 - 18:00</span>
                                     </div>
                                 </th>
                                 <th class="text-center py-3 px-3 text-sm font-bold text-gray-700">
                                     <div class="flex flex-col items-center">
-                                        <span>🌙 Malam</span>
+                                        <span> Malam</span>
                                         <span class="text-[10px] text-gray-400 font-normal">18:00 - 22:00</span>
                                     </div>
                                 </th>
                                 <th class="text-center py-3 px-3 text-sm font-bold text-gray-700">
                                     <div class="flex flex-col items-center">
-                                        <span>📅 Fullboard</span>
+                                        <span> Fullboard</span>
                                         <span class="text-[10px] text-gray-400 font-normal">Seharian Penuh</span>
                                     </div>
                                 </th>
@@ -147,25 +147,25 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div data-session="pagi">
                                     <div class="avail-cell avail-cell--loading">
-                                        <span class="text-xs text-gray-400">🌅 Pagi</span>
+                                        <span class="text-xs text-gray-400"> Pagi</span>
                                         <span class="text-[10px] text-gray-400">Loading...</span>
                                     </div>
                                 </div>
                                 <div data-session="siang">
                                     <div class="avail-cell avail-cell--loading">
-                                        <span class="text-xs text-gray-400">☀️ Siang</span>
+                                        <span class="text-xs text-gray-400"> Siang</span>
                                         <span class="text-[10px] text-gray-400">Loading...</span>
                                     </div>
                                 </div>
                                 <div data-session="malam">
                                     <div class="avail-cell avail-cell--loading">
-                                        <span class="text-xs text-gray-400">🌙 Malam</span>
+                                        <span class="text-xs text-gray-400"> Malam</span>
                                         <span class="text-[10px] text-gray-400">Loading...</span>
                                     </div>
                                 </div>
                                 <div data-session="fullboard">
                                     <div class="avail-cell avail-cell--loading">
-                                        <span class="text-xs text-gray-400">📅 Full</span>
+                                        <span class="text-xs text-gray-400"> Full</span>
                                         <span class="text-[10px] text-gray-400">Loading...</span>
                                     </div>
                                 </div>

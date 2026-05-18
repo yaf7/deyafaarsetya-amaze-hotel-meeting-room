@@ -16,6 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureAdminRole::class,
         ]);
 
+        // Redirect guest sesuai dengan prefix rute (admin vs customer)
+        $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
+            if ($request->is('admin') || $request->is('admin/*')) {
+                return route('admin.login');
+            }
+            return route('login');
+        });
+
         // Exclude Midtrans webhook dari CSRF protection
         $middleware->validateCsrfTokens(except: [
             'payment/notification',

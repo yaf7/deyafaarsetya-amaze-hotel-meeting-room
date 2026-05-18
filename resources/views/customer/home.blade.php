@@ -37,6 +37,7 @@
                         <i class="fas fa-search"></i>
                         Lihat Ruang Meeting
                     </a>
+
                     <a href="#features"
                         class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-2">
                         <i class="fas fa-info-circle"></i>
@@ -113,6 +114,8 @@
             </div>
         </div>
     </section>
+
+
 
     <!-- Promo Section -->
     @if($promotions->count() > 0)

@@ -11,6 +11,7 @@ class Reservation extends Model
         'food_package_id',
         'promotion_id',
         'admin_id',
+        'customer_id',
         'customer_name',
         'phone',
         'date',
@@ -61,5 +62,10 @@ class Reservation extends Model
     public function buffetSelections()
     {
         return $this->hasMany(ReservationBuffetSelection::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

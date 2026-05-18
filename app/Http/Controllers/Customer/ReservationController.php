@@ -100,8 +100,6 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
             'date' => 'required|date|after_or_equal:today',
             'session_slot' => 'required|in:Sesi Pagi (08:00 - 12:00),Sesi Siang (14:00 - 18:00),Sesi Malam (18:00 - 22:00),Sesi Fullboard (Seharian Penuh)',
             'participants' => 'required|integer|min:1',
@@ -132,19 +130,23 @@ class ReservationController extends Controller
             ])->withInput();
         }
 
+        $isResidential = str_contains(strtolower($package->name), 'residential');
+        $residentialType = $isResidential ? $request->residential_type : null;
+
         // Simpan data reservasi ke session untuk digunakan setelah buffet selection
         session([
             'reservation_data' => [
                 'room_id' => $request->room_id,
-                'customer_name' => $request->customer_name,
-                'phone' => $request->phone,
+                'customer_id' => $customer->id,
+                'customer_name' => $customer->name,
+                'phone' => $customer->phone ?? '-',
                 'food_package_id' => $request->food_package_id,
                 'promotion_id' => $request->promotion_id,
                 'date' => $request->date,
                 'time' => $request->session_slot,
                 'participants' => $request->participants,
                 'layout' => $request->layout,
-                'residential_type' => $request->residential_type,
+                'residential_type' => $residentialType,
             ]
         ]);
 
@@ -252,7 +254,8 @@ class ReservationController extends Controller
             'meeting_room_id' => $reservationData['room_id'],
             'food_package_id' => $reservationData['food_package_id'],
             'promotion_id' => $reservationData['promotion_id'] ?: null,
-            'admin_id' => 1,
+            'admin_id' => 1, // Default admin, bisa diubah jika perlu
+            'customer_id' => $reservationData['customer_id'] ?? null,
             'customer_name' => $reservationData['customer_name'],
             'phone' => $reservationData['phone'],
             'date' => $reservationData['date'],

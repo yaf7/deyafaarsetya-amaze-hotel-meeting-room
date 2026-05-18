@@ -30,7 +30,7 @@ class AuthController extends Controller
 
             $user = Auth::guard('web')->user();
             if ($user && $user->role === 'admin') {
-                return redirect()->intended(route('admin.dashboard'));
+                return redirect()->route('admin.dashboard');
             }
 
             // Jika bukan admin, logout & beri error

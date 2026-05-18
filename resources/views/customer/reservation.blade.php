@@ -61,31 +61,6 @@
                 <input type="hidden" name="room_id" value="{{ $room->id }}">
 
                 <div class="space-y-5 sm:space-y-6">
-                    <!-- Nama & Telepon Row -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <!-- Nama Pemesan -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-user text-amber-500 mr-2"></i>Nama Pemesan
-                            </label>
-                            <input type="text" name="customer_name"
-                                class="input-modern"
-                                placeholder="Masukkan nama lengkap"
-                                required value="{{ old('customer_name') }}">
-                        </div>
-
-                        <!-- Nomor Telepon -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-phone text-amber-500 mr-2"></i>Nomor Telepon
-                            </label>
-                            <input type="tel" name="phone"
-                                class="input-modern"
-                                placeholder="Contoh: 08123456789"
-                                required value="{{ old('phone') }}">
-                        </div>
-                    </div>
-
                     <!-- Date & Session Slot Row -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <!-- Date -->
@@ -111,7 +86,7 @@
                         <!-- Session Slot - Card Selector -->
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                <i class="fas fa-clock text-amber-500 mr-2"></i>Sesi Waktu
+                                <i class="fas fa-clock text-amber-500 mr-2"></i> Pilih Sesi Waktu
                             </label>
                             <!-- Hidden select for form submission (kept for JS logic compatibility) -->
                             <select name="session_slot" id="session-slot" class="hidden" required>
@@ -125,25 +100,21 @@
                             <!-- Visual Card Selector -->
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="session-cards">
                                 <div class="card-selector" data-session="Sesi Pagi (08:00 - 12:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__icon text-amber-500"><i class="fas fa-sun"></i></span>
                                     <span class="card-selector__label">Pagi</span>
                                     <span class="card-selector__sub">08:00 - 12:00</span>
                                     <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
                                 </div>
                                 <div class="card-selector" data-session="Sesi Siang (14:00 - 18:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__icon text-orange-500"><i class="fas fa-cloud-sun"></i></span>
                                     <span class="card-selector__label">Siang</span>
                                     <span class="card-selector__sub">14:00 - 18:00</span>
                                     <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
                                 </div>
                                 <div class="card-selector" data-session="Sesi Malam (18:00 - 22:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__icon text-indigo-500"><i class="fas fa-moon"></i></span>
                                     <span class="card-selector__label">Malam</span>
                                     <span class="card-selector__sub">18:00 - 22:00</span>
                                     <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
                                 </div>
                                 <div class="card-selector" data-session="Sesi Fullboard (Seharian Penuh)" onclick="selectSession(this)">
-                                    <span class="card-selector__icon text-blue-500"><i class="fas fa-calendar-day"></i></span>
                                     <span class="card-selector__label">Fullboard</span>
                                     <span class="card-selector__sub">Seharian Penuh</span>
                                     <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
@@ -175,7 +146,7 @@
                         <!-- Layout - Card Selector -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                <i class="fas fa-th-large text-amber-500 mr-2"></i>Layout Ruangan
+                                <i class="fas fa-th-large text-amber-500 mr-2"></i>Pilih Layout Ruangan
                             </label>
                             <select name="layout" id="layout-select" class="hidden" required>
                                 <option value="">-- Pilih Layout --</option>
@@ -187,22 +158,18 @@
                             @php $layoutData = $room->layout; @endphp
                             <div class="grid grid-cols-2 gap-3" id="layout-cards">
                                 <div class="card-selector" data-layout="theater" onclick="selectLayout(this)">
-                                    <span class="card-selector__icon text-red-500"><i class="fas fa-theater-masks"></i></span>
                                     <span class="card-selector__label">Theater</span>
                                     <span class="card-selector__sub">Maks {{ $layoutData['theater'] ?? 0 }} orang</span>
                                 </div>
                                 <div class="card-selector" data-layout="classroom" onclick="selectLayout(this)">
-                                    <span class="card-selector__icon text-blue-500"><i class="fas fa-chalkboard-teacher"></i></span>
                                     <span class="card-selector__label">Classroom</span>
                                     <span class="card-selector__sub">Maks {{ $layoutData['classroom'] ?? 0 }} orang</span>
                                 </div>
                                 <div class="card-selector" data-layout="round_table" onclick="selectLayout(this)">
-                                    <span class="card-selector__icon text-green-500"><i class="fas fa-circle"></i></span>
                                     <span class="card-selector__label">Round Table</span>
                                     <span class="card-selector__sub">Maks {{ $layoutData['round_table'] ?? 0 }} orang</span>
                                 </div>
                                 <div class="card-selector" data-layout="u_shape" onclick="selectLayout(this)">
-                                    <span class="card-selector__icon text-purple-500"><i class="fas fa-vector-square"></i></span>
                                     <span class="card-selector__label">U-Shape</span>
                                     <span class="card-selector__sub">Maks {{ $layoutData['u_shape'] ?? 0 }} orang</span>
                                 </div>
@@ -241,7 +208,6 @@
                                                 {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-center gap-2 mb-1">
-                                                    <span class="text-xl">{!! $icon !!}</span>
                                                     <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
                                                 </div>
                                                 <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
@@ -282,7 +248,6 @@
                                                 {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-center gap-2 mb-1">
-                                                    <span class="text-xl">{!! $icon !!}</span>
                                                     <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
                                                 </div>
                                                 <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
@@ -587,7 +552,21 @@
 
             // === Events ===
             document.querySelectorAll('.package-radio').forEach(r => r.addEventListener('change', function() {
-                if (isResidential(this.dataset.packageName)) residentialSection.classList.remove('hidden'); else residentialSection.classList.add('hidden');
+                if (isResidential(this.dataset.packageName)) {
+                    residentialSection.classList.remove('hidden');
+                    document.querySelectorAll('.residential-radio').forEach(radio => {
+                        radio.disabled = false;
+                    });
+                    if (!document.querySelector('input[name="residential_type"]:checked')) {
+                        document.getElementById('res-twin').checked = true;
+                    }
+                } else {
+                    residentialSection.classList.add('hidden');
+                    document.querySelectorAll('.residential-radio').forEach(radio => {
+                        radio.disabled = true;
+                        radio.checked = false;
+                    });
+                }
                 syncSessionFromPackage(); updatePriceDisplay(); calculateTotal();
             }));
             sessionSlot.addEventListener('change', syncPackageFromSession);

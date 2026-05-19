@@ -22,7 +22,12 @@ class Reservation extends Model
         'total_price',
         'status',
         'whatsapp_sent',
-        'whatsapp_sent_at'
+        'whatsapp_sent_at',
+        'reschedule_status',
+        'requested_reschedule_date',
+        'requested_reschedule_session',
+        'reschedule_rejection_reason',
+        'reschedule_count'
     ];
 
     protected $casts = [
@@ -30,7 +35,9 @@ class Reservation extends Model
         'total_price' => 'integer',
         'participants' => 'integer',
         'whatsapp_sent' => 'boolean',
-        'whatsapp_sent_at' => 'datetime'
+        'whatsapp_sent_at' => 'datetime',
+        'requested_reschedule_date' => 'date',
+        'reschedule_count' => 'integer'
     ];
 
     // Relasi

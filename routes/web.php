@@ -41,6 +41,7 @@ Route::middleware('auth:customer')->group(function () {
     Route::get('/reservations/{id}/confirmation', [ReservationController::class, 'confirmation'])->name('reservation.confirmation');
     Route::get('/payment/simulate/{id}', [ReservationController::class, 'simulatePayment'])->name('payment.simulate');
     Route::get('/reservations/{id}/invoice', [ReservationController::class, 'invoice'])->name('reservation.invoice');
+    Route::post('/reservations/{id}/reschedule', [ReservationController::class, 'requestReschedule'])->name('reservation.reschedule.request');
 });
 
 Route::post('/payment/notification', [PaymentController::class, 'callback'])->name('payment.notification');
@@ -81,6 +82,8 @@ Route::prefix('admin')->group(function () {
         // Kelola Reservasi
         Route::get('/reservations/{id}', [DashboardController::class, 'show'])->name('admin.reservation.show');
         Route::post('/reservations/{id}/update-status', [DashboardController::class, 'updateStatus'])->name('admin.reservation.update-status');
+        Route::post('/reservations/{id}/reschedule/approve', [DashboardController::class, 'approveReschedule'])->name('admin.reservation.reschedule.approve');
+        Route::post('/reservations/{id}/reschedule/reject', [DashboardController::class, 'rejectReschedule'])->name('admin.reservation.reschedule.reject');
         Route::get('/reservations/{id}/whatsapp', [DashboardController::class, 'whatsappSimulation'])->name('admin.reservation.whatsapp');
         Route::post('/reservations/{id}/whatsapp/send', [DashboardController::class, 'markWhatsappSent'])->name('admin.reservation.whatsapp.send');
         Route::post('/reservations/{id}/whatsapp/reply', [DashboardController::class, 'simulateCustomerReply'])->name('admin.reservation.whatsapp.reply');

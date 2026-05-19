@@ -1,4 +1,103 @@
 <x-app-layout>
+    <style>
+        /* Custom Premium Adjustments for Reservation Form */
+        .card-selector {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-color: #f3f4f6;
+        }
+        
+        /* Hover shadow-lift effect */
+        .card-selector:hover:not(.card-selector--disabled) {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.15) !important;
+            border-color: #f59e0b !important;
+        }
+
+        /* Active gold selection styling */
+        .card-selector--active {
+            border-color: #d97706 !important; /* amber-600 */
+            background-color: #fffbeb !important; /* amber-50 */
+            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.25) !important;
+        }
+
+        /* Checkmark Active Indicator */
+        .card-selector .active-indicator {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            color: #d97706; /* amber-600 */
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .card-selector--active .active-indicator {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Disabled Stripe Pattern for Sessions */
+        .card-selector--disabled {
+            background-image: repeating-linear-gradient(
+                45deg,
+                #f3f4f6,
+                #f3f4f6 10px,
+                #f9fafb 10px,
+                #f9fafb 20px
+            ) !important;
+            border-color: #e5e7eb !important;
+            color: #9ca3af !important;
+            opacity: 0.7 !important;
+        }
+
+        /* Package selection styling */
+        .package-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .package-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -4px rgba(0, 0, 0, 0.05);
+            border-color: #f59e0b !important;
+        }
+        
+        /* Premium Transit Room Badge Style */
+        .package-room-addon {
+            display: inline-block;
+            background-color: #f5f3ff !important; /* purple-50 */
+            color: #6d28d9 !important; /* purple-700 */
+            font-weight: 600 !important;
+            padding: 0.25rem 0.6rem !important;
+            border-radius: 0.5rem !important;
+            margin-top: 0.5rem !important;
+            font-size: 0.7rem !important;
+            border: 1px solid #ddd6fe !important;
+        }
+
+        /* Receipt slip dotted visual divider */
+        .receipt-slip::before {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background-image: radial-gradient(circle, #f9fafb 5px, transparent 5px);
+            background-size: 15px 15px;
+            background-position: bottom;
+            z-index: 10;
+        }
+
+        /* Input modern dynamic focus tint */
+        .input-modern:focus {
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1) !important;
+        }
+    </style>
+
     <!-- Header Section -->
     <section class="bg-gradient-hero py-12 relative overflow-hidden">
         <div class="floating-decoration w-48 h-48 bg-white/10 -top-10 -right-10"></div>
@@ -56,295 +155,383 @@
             </div>
 
             <!-- Reservation Form -->
-            <form action="{{ route('reservation.store') }}" method="POST" id="reservation-form" class="bg-white rounded-2xl shadow-card p-4 sm:p-6 md:p-8">
+            <form action="{{ route('reservation.store') }}" method="POST" id="reservation-form" class="space-y-6 sm:space-y-8 bg-transparent shadow-none p-0 border-0">
                 @csrf
                 <input type="hidden" name="room_id" value="{{ $room->id }}">
 
-                <div class="space-y-5 sm:space-y-6">
-                    <!-- Date & Session Slot Row -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <!-- Date -->
+                <!-- KARTU 1: DETAIL DETAIL RESERVASI & WAKTU -->
+                <div class="bg-white rounded-2xl shadow-card p-5 sm:p-6 md:p-8 border border-gray-100/60">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white font-extrabold text-sm shadow-sm">
+                            1
+                        </span>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-calendar text-amber-500 mr-2"></i>Tanggal Acara
-                            </label>
-                            <input type="date" name="date" id="date-input"
-                                class="input-modern"
-                                required min="{{ date('Y-m-d') }}"
-                                value="{{ old('date') }}">
-                            <!-- Availability status message -->
-                            <div id="date-availability" class="mt-2 hidden">
-                                <p id="date-available-msg" class="text-sm text-green-600 hidden">
-                                    <i class="fas fa-check-circle mr-1"></i>Ruangan tersedia pada tanggal ini
-                                </p>
-                                <p id="date-unavailable-msg" class="text-sm text-red-600 hidden">
-                                    <i class="fas fa-times-circle mr-1"></i>Ruangan sudah dipesan pada tanggal ini. Silakan pilih tanggal lain.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Session Slot - Card Selector -->
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                <i class="fas fa-clock text-amber-500 mr-2"></i> Pilih Sesi Waktu
-                            </label>
-                            <!-- Hidden select for form submission (kept for JS logic compatibility) -->
-                            <select name="session_slot" id="session-slot" class="hidden" required>
-                                <option value="">-- Pilih Sesi --</option>
-                                <option value="Sesi Pagi (08:00 - 12:00)" {{ old('session_slot') == 'Sesi Pagi (08:00 - 12:00)' ? 'selected' : '' }}>Pagi</option>
-                                <option value="Sesi Siang (14:00 - 18:00)" {{ old('session_slot') == 'Sesi Siang (14:00 - 18:00)' ? 'selected' : '' }}>Siang</option>
-                                <option value="Sesi Malam (18:00 - 22:00)" {{ old('session_slot') == 'Sesi Malam (18:00 - 22:00)' ? 'selected' : '' }}>Malam</option>
-                                <option value="Sesi Fullboard (Seharian Penuh)" {{ old('session_slot') == 'Sesi Fullboard (Seharian Penuh)' ? 'selected' : '' }}>Fullboard</option>
-                            </select>
-                            <input type="hidden" name="session_slot" id="session-slot-hidden" disabled value="">
-                            <!-- Visual Card Selector -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="session-cards">
-                                <div class="card-selector" data-session="Sesi Pagi (08:00 - 12:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__label">Pagi</span>
-                                    <span class="card-selector__sub">08:00 - 12:00</span>
-                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
-                                </div>
-                                <div class="card-selector" data-session="Sesi Siang (14:00 - 18:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__label">Siang</span>
-                                    <span class="card-selector__sub">14:00 - 18:00</span>
-                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
-                                </div>
-                                <div class="card-selector" data-session="Sesi Malam (18:00 - 22:00)" onclick="selectSession(this)">
-                                    <span class="card-selector__label">Malam</span>
-                                    <span class="card-selector__sub">18:00 - 22:00</span>
-                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
-                                </div>
-                                <div class="card-selector" data-session="Sesi Fullboard (Seharian Penuh)" onclick="selectSession(this)">
-                                    <span class="card-selector__label">Fullboard</span>
-                                    <span class="card-selector__sub">Seharian Penuh</span>
-                                    <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
-                                </div>
-                            </div>
-                            <!-- Info box for session lock -->
-                            <div id="session-info-box" class="hidden mt-3 info-box info-box--info">
-                                <i class="fas fa-info-circle mt-0.5"></i>
-                                <span id="session-info-text"></span>
-                            </div>
+                            <h3 class="text-base sm:text-lg font-bold text-gray-800">Detail Reservasi & Waktu</h3>
+                            <p class="text-[11px] sm:text-xs text-gray-500">Tentukan tanggal, sesi waktu, dan kapasitas ruangan</p>
                         </div>
                     </div>
 
-                    <!-- Participants & Layout Row -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <!-- Participants -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-users text-amber-500 mr-2"></i>Jumlah Peserta
-                            </label>
-                            <input type="number" name="participants" id="participants-input"
-                                class="input-modern"
-                                min="1" value="{{ old('participants', 1) }}" required>
-                            <p class="text-xs sm:text-sm text-gray-500 mt-2">
-                                Maksimal: <span id="max-capacity" class="font-semibold text-amber-600">...</span> orang
-                            </p>
-                        </div>
-
-                        <!-- Layout - Card Selector -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                <i class="fas fa-th-large text-amber-500 mr-2"></i>Pilih Layout Ruangan
-                            </label>
-                            <select name="layout" id="layout-select" class="hidden" required>
-                                <option value="">-- Pilih Layout --</option>
-                                <option value="theater" {{ old('layout') == 'theater' ? 'selected' : '' }}>Theater</option>
-                                <option value="classroom" {{ old('layout') == 'classroom' ? 'selected' : '' }}>Classroom</option>
-                                <option value="round_table" {{ old('layout') == 'round_table' ? 'selected' : '' }}>Round Table</option>
-                                <option value="u_shape" {{ old('layout') == 'u_shape' ? 'selected' : '' }}>U-Shape</option>
-                            </select>
-                            @php $layoutData = $room->layout; @endphp
-                            <div class="grid grid-cols-2 gap-3" id="layout-cards">
-                                <div class="card-selector" data-layout="theater" onclick="selectLayout(this)">
-                                    <span class="card-selector__label">Theater</span>
-                                    <span class="card-selector__sub">Maks {{ $layoutData['theater'] ?? 0 }} orang</span>
+                    <div class="space-y-5 sm:space-y-6">
+                        <!-- Date & Session Slot Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Date -->
+                            <div class="relative">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-calendar text-amber-500 mr-2"></i>Tanggal Acara
+                                </label>
+                                <div class="relative">
+                                    <input type="date" name="date" id="date-input"
+                                        class="input-modern pr-10"
+                                        required min="{{ date('Y-m-d') }}"
+                                        value="{{ old('date') }}">
                                 </div>
-                                <div class="card-selector" data-layout="classroom" onclick="selectLayout(this)">
-                                    <span class="card-selector__label">Classroom</span>
-                                    <span class="card-selector__sub">Maks {{ $layoutData['classroom'] ?? 0 }} orang</span>
-                                </div>
-                                <div class="card-selector" data-layout="round_table" onclick="selectLayout(this)">
-                                    <span class="card-selector__label">Round Table</span>
-                                    <span class="card-selector__sub">Maks {{ $layoutData['round_table'] ?? 0 }} orang</span>
-                                </div>
-                                <div class="card-selector" data-layout="u_shape" onclick="selectLayout(this)">
-                                    <span class="card-selector__label">U-Shape</span>
-                                    <span class="card-selector__sub">Maks {{ $layoutData['u_shape'] ?? 0 }} orang</span>
+                                <!-- Availability status message -->
+                                <div id="date-availability" class="mt-2 hidden">
+                                    <p id="date-available-msg" class="text-sm text-green-600 hidden">
+                                        <i class="fas fa-check-circle mr-1"></i>Ruangan tersedia pada tanggal ini
+                                    </p>
+                                    <p id="date-unavailable-msg" class="text-sm text-red-600 hidden">
+                                        <i class="fas fa-times-circle mr-1"></i>Ruangan sudah dipesan pada tanggal ini. Silakan pilih tanggal lain.
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Package Section -->
-                    <div class="border-t border-gray-200 pt-5 sm:pt-6">
-                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
-                            <i class="fas fa-utensils text-green-600"></i>
-                            Pilih Paket Meeting
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-500 mb-5">Pilih salah satu paket yang sesuai kebutuhan Anda</p>
-
-                        <!-- Paket Reguler -->
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-box"></i> Paket Reguler</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                            @foreach ($packages as $pkg)
-                                @if (!str_contains(strtolower($pkg->name), 'residential'))
-                                    @php
-                                        $icons = ['half day' => '<i class="fas fa-coffee text-amber-600"></i>', 'full day' => '<i class="fas fa-utensils text-amber-600"></i>', 'full board' => '<i class="fas fa-concierge-bell text-amber-600"></i>'];
-                                        $icon = '<i class="fas fa-box text-amber-600"></i>';
-                                        foreach ($icons as $k => $v) { if (str_contains(strtolower($pkg->name), $k)) { $icon = $v; break; } }
-                                        preg_match('/(\d+)\s*jam/', $pkg->description, $m);
-                                        $dur = isset($m[1]) ? $m[1] . ' jam' : '';
-                                        $parts = explode(':', $pkg->description, 2);
-                                        $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
-                                    @endphp
-                                    <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 cursor-pointer">
-                                        <div class="flex items-start gap-3">
-                                            <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
-                                                data-package-name="{{ $pkg->name }}"
-                                                data-package-price="{{ $pkg->price }}"
-                                                class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" required
-                                                {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
-                                                </div>
-                                                <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
-                                                <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($pkg->price, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
-                                            </div>
+                            <!-- Session Slot - Card Selector -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <i class="fas fa-clock text-amber-500 mr-2"></i> Pilih Sesi Waktu
+                                </label>
+                                <!-- Hidden select for form submission (kept for JS logic compatibility) -->
+                                <select name="session_slot" id="session-slot" class="hidden" required>
+                                    <option value="">-- Pilih Sesi --</option>
+                                    <option value="Sesi Pagi (08:00 - 12:00)" {{ old('session_slot') == 'Sesi Pagi (08:00 - 12:00)' ? 'selected' : '' }}>Pagi</option>
+                                    <option value="Sesi Siang (14:00 - 18:00)" {{ old('session_slot') == 'Sesi Siang (14:00 - 18:00)' ? 'selected' : '' }}>Siang</option>
+                                    <option value="Sesi Malam (18:00 - 22:00)" {{ old('session_slot') == 'Sesi Malam (18:00 - 22:00)' ? 'selected' : '' }}>Malam</option>
+                                    <option value="Sesi Fullboard (Seharian Penuh)" {{ old('session_slot') == 'Sesi Fullboard (Seharian Penuh)' ? 'selected' : '' }}>Fullboard</option>
+                                </select>
+                                <input type="hidden" name="session_slot" id="session-slot-hidden" disabled value="">
+                                <!-- Visual Card Selector -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="session-cards">
+                                    <div class="card-selector relative overflow-hidden" data-session="Sesi Pagi (08:00 - 12:00)" onclick="selectSession(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
                                         </div>
-                                    </label>
-                                @endif
-                            @endforeach
-                        </div>
-
-                        <!-- Paket Residential -->
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3"><i class="fas fa-bed"></i> Paket Residential <span class="text-gray-400 font-normal normal-case">(Termasuk Menginap)</span></p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            @foreach ($packages as $pkg)
-                                @if (str_contains(strtolower($pkg->name), 'residential'))
-                                    @php
-                                        $icon = '<i class="fas fa-bed text-purple-600"></i>';
-                                        preg_match('/(\d+)\s*jam/', $pkg->description, $m);
-                                        $dur = isset($m[1]) ? $m[1] . ' jam + 1 malam' : '+ 1 malam';
-                                        $parts = explode(':', $pkg->description, 2);
-                                        $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
-                                        // Base price (meeting only) & room addon
-                                        $resBaseMap = [
-                                            'Residential Full Day Meeting' => ['base' => 235000, 'twin' => 315000, 'single' => 415000],
-                                            'Residential Full Board Meeting' => ['base' => 380000, 'twin' => 220000, 'single' => 320000],
-                                        ];
-                                        $resInfo = $resBaseMap[$pkg->name] ?? null;
-                                        $basePrice = $resInfo ? $resInfo['base'] : $pkg->price;
-                                        $roomAddon = $resInfo ? $resInfo['twin'] : 0;
-                                    @endphp
-                                    <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 cursor-pointer">
-                                        <div class="flex items-start gap-3">
-                                            <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
-                                                data-package-name="{{ $pkg->name }}"
-                                                data-package-price="{{ $pkg->price }}"
-                                                class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" required
-                                                {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
-                                                </div>
-                                                <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
-                                                <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($basePrice, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
-                                                <p class="package-room-addon text-xs text-purple-600 mt-0.5">(+ Rp{{ number_format($roomAddon, 0, ',', '.') }} Kamar Transit)</p>
-                                            </div>
+                                        <span class="card-selector__label">Pagi</span>
+                                        <span class="card-selector__sub">08:00 - 12:00</span>
+                                        <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-session="Sesi Siang (14:00 - 18:00)" onclick="selectSession(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
                                         </div>
-                                    </label>
-                                @endif
-                            @endforeach
+                                        <span class="card-selector__label">Siang</span>
+                                        <span class="card-selector__sub">14:00 - 18:00</span>
+                                        <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-session="Sesi Malam (18:00 - 22:00)" onclick="selectSession(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">Malam</span>
+                                        <span class="card-selector__sub">18:00 - 22:00</span>
+                                        <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-session="Sesi Fullboard (Seharian Penuh)" onclick="selectSession(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">Fullboard</span>
+                                        <span class="card-selector__sub">Seharian Penuh</span>
+                                        <span class="card-selector__badge bg-green-100 text-green-700 session-badge">Tersedia</span>
+                                    </div>
+                                </div>
+                                <!-- Info box for session lock -->
+                                <div id="session-info-box" class="hidden mt-3 info-box info-box--info">
+                                    <i class="fas fa-info-circle mt-0.5"></i>
+                                    <span id="session-info-text"></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Residential Type Section (hidden by default) -->
-                    <div id="residential-type-section" class="hidden border-t border-gray-200 pt-5 sm:pt-6">
-                        <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-                            <i class="fas fa-bed text-blue-600"></i>
-                            Tipe Kamar Menginap
-                        </h3>
-                        <p class="text-xs sm:text-sm text-gray-600 mb-4">Pilih tipe kamar untuk paket residential</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <label for="res-twin" class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
-                                <input type="radio" name="residential_type" value="twin" id="res-twin"
-                                    class="residential-radio h-5 w-5 text-blue-600"
-                                    {{ old('residential_type', 'twin') == 'twin' ? 'checked' : '' }}>
-                                <div>
-                                    <span class="font-semibold text-gray-800">Twin Sharing</span>
-                                    <p class="text-xs text-gray-500 mt-0.5">1 kamar untuk 2 orang</p>
-                                </div>
-                            </label>
-                            <label for="res-single" class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
-                                <input type="radio" name="residential_type" value="single" id="res-single"
-                                    class="residential-radio h-5 w-5 text-blue-600"
-                                    {{ old('residential_type') == 'single' ? 'checked' : '' }}>
-                                <div>
-                                    <span class="font-semibold text-gray-800">Single Occupancy</span>
-                                    <p class="text-xs text-gray-500 mt-0.5">1 kamar untuk 1 orang</p>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
+                        <!-- Participants & Layout Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Participants -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-users text-amber-500 mr-2"></i>Jumlah Peserta
+                                </label>
+                                <input type="number" name="participants" id="participants-input"
+                                    class="input-modern"
+                                    min="1" value="{{ old('participants', 1) }}" required>
+                                <p class="text-xs sm:text-sm text-gray-500 mt-2">
+                                    Maksimal: <span id="max-capacity" class="font-semibold text-amber-600">...</span> orang
+                                </p>
+                            </div>
 
-                    <!-- Estimasi Total Harga -->
-                    <div id="price-estimation" class="hidden border-t border-gray-200 pt-5 sm:pt-6">
-                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-200">
-                            <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                <i class="fas fa-calculator text-amber-600"></i>
-                                Estimasi Total Harga
-                            </h3>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Paket: <span id="est-package-name" class="font-medium text-gray-800">-</span></span>
-                                    <span class="text-gray-600">Rp<span id="est-price-per-pax">0</span> /pax</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-600">Jumlah Peserta</span>
-                                    <span class="font-medium text-gray-800"><span id="est-participants">0</span> orang</span>
-                                </div>
-                                <div id="est-room-addon" class="hidden flex justify-between items-center text-blue-600">
-                                    <span>Biaya Kamar Transit Panitia</span>
-                                    <span class="font-medium">+ Rp<span id="est-room-cost">0</span></span>
-                                </div>
-                                <div class="border-t border-amber-300 pt-2 mt-2">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold text-gray-800 text-base">Total Estimasi</span>
-                                        <span class="font-bold text-amber-600 text-xl">Rp<span id="est-total">0</span></span>
+                            <!-- Layout - Card Selector -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <i class="fas fa-th-large text-amber-500 mr-2"></i>Pilih Layout Ruangan
+                                </label>
+                                <select name="layout" id="layout-select" class="hidden" required>
+                                    <option value="">-- Pilih Layout --</option>
+                                    <option value="theater" {{ old('layout') == 'theater' ? 'selected' : '' }}>Theater</option>
+                                    <option value="classroom" {{ old('layout') == 'classroom' ? 'selected' : '' }}>Classroom</option>
+                                    <option value="round_table" {{ old('layout') == 'round_table' ? 'selected' : '' }}>Round Table</option>
+                                    <option value="u_shape" {{ old('layout') == 'u_shape' ? 'selected' : '' }}>U-Shape</option>
+                                </select>
+                                @php $layoutData = $room->layout; @endphp
+                                <div class="grid grid-cols-2 gap-3" id="layout-cards">
+                                    <div class="card-selector relative overflow-hidden" data-layout="theater" onclick="selectLayout(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">Theater</span>
+                                        <span class="card-selector__sub">Maks {{ $layoutData['theater'] ?? 0 }} orang</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-layout="classroom" onclick="selectLayout(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">Classroom</span>
+                                        <span class="card-selector__sub">Maks {{ $layoutData['classroom'] ?? 0 }} orang</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-layout="round_table" onclick="selectLayout(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">Round Table</span>
+                                        <span class="card-selector__sub">Maks {{ $layoutData['round_table'] ?? 0 }} orang</span>
+                                    </div>
+                                    <div class="card-selector relative overflow-hidden" data-layout="u_shape" onclick="selectLayout(this)">
+                                        <div class="active-indicator">
+                                            <i class="fas fa-check-circle text-xs sm:text-sm"></i>
+                                        </div>
+                                        <span class="card-selector__label">U-Shape</span>
+                                        <span class="card-selector__sub">Maks {{ $layoutData['u_shape'] ?? 0 }} orang</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Promo Section -->
-                    <div class="border-t border-gray-200 pt-5 sm:pt-6">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-tag text-orange-500 mr-2"></i>Gunakan Promo (Opsional)
-                        </label>
-                        <select name="promotion_id" class="input-modern">
-                            <option value="">Tidak Pakai Promo</option>
-                            @foreach ($promotions as $promo)
-                                <option value="{{ $promo->id }}" {{ old('promotion_id') == $promo->id ? 'selected' : '' }}>
-                                    {{ $promo->name }} (Diskon {{ number_format($promo->discount, 2) }}%)
-                                </option>
-                            @endforeach
-                        </select>
-                        <p class="text-xs sm:text-sm text-gray-500 mt-2">
-                            <i class="fas fa-info-circle text-gray-400 mr-1"></i>
-                            Diskon akan diterapkan di halaman konfirmasi
-                        </p>
+                <!-- KARTU 2: PILIHAN PAKET & LAYANAN TAMBAHAN -->
+                <div class="bg-white rounded-2xl shadow-card p-5 sm:p-6 md:p-8 border border-gray-100/60">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white font-extrabold text-sm shadow-sm">
+                            2
+                        </span>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-gray-800">Paket & Layanan Tambahan</h3>
+                            <p class="text-[11px] sm:text-xs text-gray-500">Pilih paket konsumsi dan layanan akomodasi peserta</p>
+                        </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <div class="pt-3 sm:pt-4">
-                        <button type="submit" id="submit-btn" class="w-full btn-secondary text-base sm:text-lg py-3 sm:py-4">
-                            <i class="fas fa-arrow-right mr-2"></i>
-                            Lanjut ke Pemilihan Menu Buffet
-                        </button>
+                    <div class="space-y-6">
+                        <!-- Package Section -->
+                        <div>
+                            <h3 class="text-base font-bold text-gray-800 mb-1 flex items-center gap-2">
+                                <i class="fas fa-utensils text-green-600"></i>
+                                Pilih Paket Meeting
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-5">Pilih salah satu paket konsumsi yang sesuai kebutuhan Anda</p>
+
+                            <!-- Paket Reguler -->
+                            <div class="flex items-center gap-3 mb-4 mt-6">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700 text-sm">
+                                    <i class="fas fa-box"></i>
+                                </span>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800">Paket Reguler</h4>
+                                    <p class="text-[11px] text-gray-500">Pilihan paket meeting harian standar</p>
+                                </div>
+                                <div class="flex-1 h-px bg-gray-100"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                                @foreach ($packages as $pkg)
+                                    @if (!str_contains(strtolower($pkg->name), 'residential'))
+                                        @php
+                                            $icons = ['half day' => '<i class="fas fa-coffee text-amber-600"></i>', 'full day' => '<i class="fas fa-utensils text-amber-600"></i>', 'full board' => '<i class="fas fa-concierge-bell text-amber-600"></i>'];
+                                            $icon = '<i class="fas fa-box text-amber-600"></i>';
+                                            foreach ($icons as $k => $v) { if (str_contains(strtolower($pkg->name), $k)) { $icon = $v; break; } }
+                                            preg_match('/(\d+)\s*jam/', $pkg->description, $m);
+                                            $dur = isset($m[1]) ? $m[1] . ' jam' : '';
+                                            $parts = explode(':', $pkg->description, 2);
+                                            $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
+                                        @endphp
+                                        <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50 cursor-pointer p-4 border-2 border-gray-200 rounded-xl">
+                                            <div class="flex items-start gap-3">
+                                                <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
+                                                    data-package-name="{{ $pkg->name }}"
+                                                    data-package-price="{{ $pkg->price }}"
+                                                    class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0 focus:ring-amber-500/20" required
+                                                    {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
+                                                    <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($pkg->price, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            <!-- Paket Residential -->
+                            <div class="flex items-center gap-3 mb-4 mt-6">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-100 text-purple-700 text-sm">
+                                    <i class="fas fa-bed"></i>
+                                </span>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800">Paket Residential</h4>
+                                    <p class="text-[11px] text-gray-500">Sudah termasuk fasilitas menginap 1 malam</p>
+                                </div>
+                                <div class="flex-1 h-px bg-gray-100"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                                @foreach ($packages as $pkg)
+                                    @if (str_contains(strtolower($pkg->name), 'residential'))
+                                        @php
+                                            $icon = '<i class="fas fa-bed text-purple-600"></i>';
+                                            preg_match('/(\d+)\s*jam/', $pkg->description, $m);
+                                            $dur = isset($m[1]) ? $m[1] . ' jam + 1 malam' : '+ 1 malam';
+                                            $parts = explode(':', $pkg->description, 2);
+                                            $facility = isset($parts[1]) ? trim($parts[1]) : $pkg->description;
+                                            // Base price (meeting only) & room addon
+                                            $resBaseMap = [
+                                                'Residential Full Day Meeting' => ['base' => 235000, 'twin' => 315000, 'single' => 415000],
+                                                'Residential Full Board Meeting' => ['base' => 380000, 'twin' => 220000, 'single' => 320000],
+                                            ];
+                                            $resInfo = $resBaseMap[$pkg->name] ?? null;
+                                            $basePrice = $resInfo ? $resInfo['base'] : $pkg->price;
+                                            $roomAddon = $resInfo ? $resInfo['twin'] : 0;
+                                        @endphp
+                                        <label class="package-card has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50 cursor-pointer p-4 border-2 border-gray-200 rounded-xl">
+                                            <div class="flex items-start gap-3">
+                                                <input type="radio" name="food_package_id" value="{{ $pkg->id }}"
+                                                    data-package-name="{{ $pkg->name }}"
+                                                    data-package-price="{{ $pkg->price }}"
+                                                    class="package-radio h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0 focus:ring-amber-500/20" required
+                                                    {{ old('food_package_id') == $pkg->id ? 'checked' : '' }}>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="font-bold text-gray-800 text-sm">{{ $pkg->name }}</span>
+                                                    </div>
+                                                    <p class="text-xs text-gray-500 mb-2">{{ $dur }} · {{ $facility }}</p>
+                                                    <p class="package-price-display font-bold text-amber-600 text-sm">Rp{{ number_format($basePrice, 0, ',', '.') }}<span class="text-xs font-normal text-gray-400">/pax</span></p>
+                                                    <p class="package-room-addon text-xs text-purple-600 mt-0.5">(+ Rp{{ number_format($roomAddon, 0, ',', '.') }} Kamar Transit)</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Residential Type Section (hidden by default) -->
+                        <div id="residential-type-section" class="hidden border-t border-gray-200 pt-6 mt-6">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-700 text-sm">
+                                    <i class="fas fa-bed"></i>
+                                </span>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800">Tipe Kamar Menginap</h4>
+                                    <p class="text-[11px] text-gray-500">Konfigurasi kamar tidur peserta & panitia</p>
+                                </div>
+                                <div class="flex-1 h-px bg-gray-100"></div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <label for="res-twin" class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                    <input type="radio" name="residential_type" value="twin" id="res-twin"
+                                        class="residential-radio h-5 w-5 text-blue-600"
+                                        {{ old('residential_type', 'twin') == 'twin' ? 'checked' : '' }}>
+                                    <div>
+                                        <span class="font-semibold text-gray-800">Twin Sharing</span>
+                                        <p class="text-xs text-gray-500 mt-0.5">1 kamar untuk 2 orang</p>
+                                    </div>
+                                </label>
+                                <label for="res-single" class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                    <input type="radio" name="residential_type" value="single" id="res-single"
+                                        class="residential-radio h-5 w-5 text-blue-600"
+                                        {{ old('residential_type') == 'single' ? 'checked' : '' }}>
+                                    <div>
+                                        <span class="font-semibold text-gray-800">Single Occupancy</span>
+                                        <p class="text-xs text-gray-500 mt-0.5">1 kamar untuk 1 orang</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Estimasi Total Harga -->
+                        <div id="price-estimation" class="hidden border-t border-gray-200 pt-6 mt-6">
+                            <div class="bg-gradient-to-br from-amber-50/60 to-orange-50/60 rounded-2xl p-6 border border-amber-100 shadow-sm relative overflow-hidden receipt-slip">
+                                <div class="absolute top-0 right-0 w-24 h-24 bg-amber-100/20 rounded-full blur-xl pointer-events-none"></div>
+                                
+                                <h3 class="text-xs font-bold text-gray-800 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                                    <i class="fas fa-calculator text-amber-600"></i>
+                                    Rincian Estimasi Biaya
+                                </h3>
+                                
+                                <div class="space-y-3 text-sm relative z-10">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-500">Paket Terpilih</span>
+                                        <span id="est-package-name" class="font-semibold text-gray-800">-</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-500">Harga per Pax</span>
+                                        <span class="font-medium text-gray-800">Rp<span id="est-price-per-pax">0</span> <span class="text-xs text-gray-400">/pax</span></span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-500">Jumlah Peserta</span>
+                                        <span class="font-medium text-gray-800"><span id="est-participants">0</span> orang</span>
+                                    </div>
+                                    <div id="est-room-addon" class="hidden flex justify-between items-center text-purple-600 bg-purple-50/60 px-3 py-1.5 rounded-lg border border-purple-100">
+                                        <span class="flex items-center gap-1.5 text-xs"><i class="fas fa-bed"></i> Akomodasi Kamar Transit</span>
+                                        <span class="font-bold text-xs">+ Rp<span id="est-room-cost">0</span></span>
+                                    </div>
+                                    
+                                    <!-- Elegant Dashed Border Divider -->
+                                    <div class="border-t border-dashed border-amber-200/80 my-3 pt-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-bold text-gray-800 text-sm uppercase">Total Estimasi</span>
+                                            <span class="font-bold text-amber-600 text-lg sm:text-xl">Rp<span id="est-total">0</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Promo Section -->
+                        <div class="border-t border-gray-200 pt-5 sm:pt-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-tag text-orange-500 mr-2"></i>Gunakan Promo (Opsional)
+                            </label>
+                            <select name="promotion_id" class="input-modern focus:border-amber-500 focus:ring-0">
+                                <option value="">Tidak Pakai Promo</option>
+                                @foreach ($promotions as $promo)
+                                    <option value="{{ $promo->id }}" {{ old('promotion_id') == $promo->id ? 'selected' : '' }}>
+                                        {{ $promo->name }} (Diskon {{ number_format($promo->discount, 2) }}%)
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs sm:text-sm text-gray-500 mt-2">
+                                <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                                Diskon akan diterapkan di halaman konfirmasi
+                            </p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-4 mt-6">
+                            <button type="submit" id="submit-btn" class="w-full relative overflow-hidden inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base sm:text-lg rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] group cursor-pointer border-0">
+                                <span class="relative z-10 flex items-center justify-center gap-2">
+                                    <span>Lanjut ke Pemilihan Menu Buffet</span>
+                                    <i class="fas fa-arrow-right transition-transform duration-300 group-hover:translate-x-1.5"></i>
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>

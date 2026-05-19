@@ -24,12 +24,15 @@ class ReservationController extends Controller
      *
      * @return string|null Pesan error jika konflik, null jika OK
      */
-    private function checkSessionConflict($roomId, $date, $newSession, $newPackageName = '')
+    private function checkSessionConflict($roomId, $date, $newSession, $newPackageName = '', $excludeReservationId = null)
     {
         // Ambil semua reservasi aktif (sukses) untuk ruangan ini di tanggal ini
         $existing = Reservation::where('meeting_room_id', $roomId)
             ->where('date', $date)
             ->where('status', 'sukses')
+            ->when($excludeReservationId, function($q) use ($excludeReservationId) {
+                return $q->where('id', '!=', $excludeReservationId);
+            })
             ->get();
 
         if ($existing->isEmpty()) {
@@ -446,5 +449,71 @@ class ReservationController extends Controller
             ->toArray();
 
         return response()->json(['booked_dates' => $bookedDates]);
+    }
+
+    /**
+     * Mengajukan penjadwalan ulang (reschedule) oleh pelanggan.
+     */
+    public function requestReschedule(Request $request, $id)
+    {
+        $request->validate([
+            'date' => 'required|date|after:today',
+            'session_slot' => 'required|in:Sesi Pagi (08:00 - 12:00),Sesi Siang (14:00 - 18:00),Sesi Malam (18:00 - 22:00),Sesi Fullboard (Seharian Penuh)',
+        ], [
+            'date.required' => 'Tanggal baru wajib dipilih.',
+            'date.after' => 'Tanggal reschedule harus setelah hari ini.',
+            'session_slot.required' => 'Sesi waktu baru wajib dipilih.',
+        ]);
+
+        $reservation = Reservation::findOrFail($id);
+
+        // Validasi: kepemilikan
+        if ($reservation->customer_id !== auth('customer')->id()) {
+            return back()->withErrors(['error' => 'Anda tidak memiliki otorisasi untuk mengubah reservasi ini.']);
+        }
+
+        // Validasi: status harus sukses (lunas)
+        if ($reservation->status !== 'sukses') {
+            return back()->withErrors(['error' => 'Hanya reservasi yang sudah lunas yang dapat di-reschedule.']);
+        }
+
+        // Validasi: reschedule_status tidak boleh pending
+        if ($reservation->reschedule_status === 'pending') {
+            return back()->withErrors(['error' => 'Reservasi ini sedang menunggu persetujuan reschedule sebelumnya.']);
+        }
+
+        // Validasi: reschedule_count < 1
+        if ($reservation->reschedule_count >= 1) {
+            return back()->withErrors(['error' => 'Batas maksimal reschedule (1 kali) telah tercapai.']);
+        }
+
+        // Validasi: H-3 dari tanggal asli
+        $eventDate = \Carbon\Carbon::parse($reservation->date);
+        if (now()->diffInDays($eventDate, false) < 3) {
+            return back()->withErrors(['error' => 'Reschedule hanya dapat dilakukan maksimal H-3 sebelum tanggal acara asli.']);
+        }
+
+        // Cek konflik sesi
+        $conflictError = $this->checkSessionConflict(
+            $reservation->meeting_room_id,
+            $request->date,
+            $request->session_slot,
+            $reservation->foodPackage->name,
+            $reservation->id // Exclude self
+        );
+
+        if ($conflictError) {
+            return back()->withErrors(['session_slot' => $conflictError]);
+        }
+
+        // Update usulan reschedule
+        $reservation->update([
+            'reschedule_status' => 'pending',
+            'requested_reschedule_date' => $request->date,
+            'requested_reschedule_session' => $request->session_slot,
+            'reschedule_rejection_reason' => null
+        ]);
+
+        return back()->with('success', 'Pengajuan penjadwalan ulang berhasil dikirim. Menunggu persetujuan admin.');
     }
 }

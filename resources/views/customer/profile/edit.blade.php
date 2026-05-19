@@ -178,6 +178,10 @@
                                         </thead>
                                         <tbody class="divide-y divide-gray-100">
                                             @foreach($reservations as $res)
+                                                @php
+                                                    $eventDate = \Carbon\Carbon::parse($res->date);
+                                                    $canReschedule = ($res->status === 'sukses' && $res->reschedule_count == 0 && ($res->reschedule_status === null || $res->reschedule_status === 'rejected') && now()->diffInDays($eventDate, false) >= 3);
+                                                @endphp
                                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                                     <td class="px-6 py-4 font-bold text-gray-900 text-sm">
                                                         #{{ str_pad($res->id, 6, '0', STR_PAD_LEFT) }}
@@ -210,6 +214,27 @@
                                                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Dibatalkan
                                                             </span>
                                                         @endif
+
+                                                        @if($res->reschedule_status === 'pending')
+                                                            <div class="mt-1">
+                                                                <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200">
+                                                                    <i class="fas fa-clock text-[9px] animate-pulse"></i> Pending Reschedule
+                                                                </span>
+                                                            </div>
+                                                        @elseif($res->reschedule_status === 'approved')
+                                                            <div class="mt-1">
+                                                                <span class="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-200">
+                                                                    <i class="fas fa-calendar-check text-[9px]"></i> Rescheduled
+                                                                </span>
+                                                            </div>
+                                                        @elseif($res->reschedule_status === 'rejected')
+                                                            <div class="mt-1">
+                                                                <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-200 cursor-help" title="Alasan: {{ $res->reschedule_rejection_reason }}">
+                                                                    <i class="fas fa-times-circle text-[9px]"></i> Reschedule Ditolak
+                                                                </span>
+                                                                <div class="text-[9px] text-rose-500 mt-0.5 italic max-w-[150px] truncate mx-auto" title="{{ $res->reschedule_rejection_reason }}">"{{ $res->reschedule_rejection_reason }}"</div>
+                                                            </div>
+                                                        @endif
                                                     </td>
                                                     <td class="px-6 py-4 text-center">
                                                         <div class="flex items-center justify-center gap-2">
@@ -217,6 +242,14 @@
                                                                 <a href="{{ route('payment.pay', $res->id) }}" class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
                                                                     <i class="fas fa-credit-card text-[10px]"></i> Bayar
                                                                 </a>
+                                                            @endif
+                                                            @if($canReschedule)
+                                                                <button type="button" 
+                                                                        onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}')"
+                                                                        data-room-id="{{ $res->meeting_room_id }}"
+                                                                        class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
+                                                                    <i class="fas fa-calendar-alt text-[10px]"></i> Reschedule
+                                                                </button>
                                                             @endif
                                                             <a href="{{ route('reservation.invoice', $res->id) }}" class="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
                                                                 <i class="fas fa-file-invoice text-[10px]"></i> Invoice
@@ -230,70 +263,206 @@
                                 </div>
                             </div>
 
-                            <!-- Reservations Cards (Mobile) -->
-                            <div class="md:hidden space-y-4">
-                                @foreach($reservations as $res)
-                                    <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-4">
-                                        <div class="flex justify-between items-center pb-3 border-b border-gray-50">
-                                            <span class="font-bold text-gray-800 text-sm">#{{ str_pad($res->id, 6, '0', STR_PAD_LEFT) }}</span>
-                                            @if($res->status == 'sukses')
-                                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
-                                                    Sukses
-                                                </span>
-                                            @elseif($res->status == 'pending')
-                                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-amber-200">
-                                                    Pending
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-200">
-                                                    Dibatalkan
-                                                </span>
-                                            @endif
-                                        </div>
+                             <!-- Reservations Cards (Mobile) -->
+                             <div class="md:hidden space-y-4">
+                                 @foreach($reservations as $res)
+                                     @php
+                                         $eventDate = \Carbon\Carbon::parse($res->date);
+                                         $canReschedule = ($res->status === 'sukses' && $res->reschedule_count == 0 && ($res->reschedule_status === null || $res->reschedule_status === 'rejected') && now()->diffInDays($eventDate, false) >= 3);
+                                     @endphp
+                                     <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-4">
+                                         <div class="flex justify-between items-center pb-3 border-b border-gray-50">
+                                             <div class="flex flex-col gap-1">
+                                                 <span class="font-bold text-gray-800 text-sm">#{{ str_pad($res->id, 6, '0', STR_PAD_LEFT) }}</span>
+                                             </div>
+                                             <div class="flex flex-col items-end gap-1">
+                                                 @if($res->status == 'sukses')
+                                                     <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+                                                         Sukses
+                                                     </span>
+                                                 @elseif($res->status == 'pending')
+                                                     <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-amber-200">
+                                                         Pending
+                                                     </span>
+                                                 @else
+                                                     <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-red-200">
+                                                         Dibatalkan
+                                                     </span>
+                                                 @endif
 
-                                        <div class="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span class="text-xs text-gray-400 block mb-0.5">Ruang Meeting</span>
-                                                <span class="font-semibold text-gray-700">{{ $res->meetingRoom->name }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-xs text-gray-400 block mb-0.5">Tanggal & Waktu</span>
-                                                <span class="font-semibold text-gray-700">{{ \Carbon\Carbon::parse($res->date)->locale('id')->isoFormat('D MMM Y') }} ({{ $res->time }})</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-xs text-gray-400 block mb-0.5">Paket</span>
-                                                <span class="font-semibold text-gray-700">{{ $res->foodPackage->name }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-xs text-gray-400 block mb-0.5">Peserta</span>
-                                                <span class="font-semibold text-gray-700">{{ $res->participants }} Orang</span>
-                                            </div>
-                                        </div>
+                                                 @if($res->reschedule_status === 'pending')
+                                                     <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200">
+                                                         Pending Reschedule
+                                                     </span>
+                                                 @elseif($res->reschedule_status === 'approved')
+                                                     <span class="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-200">
+                                                         Rescheduled
+                                                     </span>
+                                                 @elseif($res->reschedule_status === 'rejected')
+                                                     <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-200" title="Alasan: {{ $res->reschedule_rejection_reason }}">
+                                                         Reschedule Ditolak
+                                                     </span>
+                                                 @endif
+                                             </div>
+                                         </div>
 
-                                        <div class="pt-3 border-t border-gray-50 flex items-center justify-between">
-                                            <div>
-                                                <span class="text-xs text-gray-400 block">Total Pembayaran</span>
-                                                <span class="font-bold text-gray-900 text-base">Rp{{ number_format($res->total_price, 0, ',', '.') }}</span>
-                                            </div>
-                                            <div class="flex gap-2">
-                                                @if($res->status === 'pending')
-                                                    <a href="{{ route('payment.pay', $res->id) }}" class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-sm">
-                                                        Bayar
-                                                    </a>
-                                                @endif
-                                                <a href="{{ route('reservation.invoice', $res->id) }}" class="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg transition">
-                                                    Invoice
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
+                                         <div class="grid grid-cols-2 gap-4 text-sm">
+                                             <div>
+                                                 <span class="text-xs text-gray-400 block mb-0.5">Ruang Meeting</span>
+                                                 <span class="font-semibold text-gray-700">{{ $res->meetingRoom->name }}</span>
+                                             </div>
+                                             <div>
+                                                 <span class="text-xs text-gray-400 block mb-0.5">Tanggal & Waktu</span>
+                                                 <span class="font-semibold text-gray-700">{{ \Carbon\Carbon::parse($res->date)->locale('id')->isoFormat('D MMM Y') }} ({{ $res->time }})</span>
+                                             </div>
+                                             <div>
+                                                 <span class="text-xs text-gray-400 block mb-0.5">Paket</span>
+                                                 <span class="font-semibold text-gray-700">{{ $res->foodPackage->name }}</span>
+                                             </div>
+                                             <div>
+                                                 <span class="text-xs text-gray-400 block mb-0.5">Peserta</span>
+                                                 <span class="font-semibold text-gray-700">{{ $res->participants }} Orang</span>
+                                             </div>
+                                         </div>
+
+                                         <div class="pt-3 border-t border-gray-50 flex items-center justify-between">
+                                             <div>
+                                                 <span class="text-xs text-gray-400 block">Total Pembayaran</span>
+                                                 <span class="font-bold text-gray-900 text-base">Rp{{ number_format($res->total_price, 0, ',', '.') }}</span>
+                                             </div>
+                                             <div class="flex gap-2">
+                                                 @if($res->status === 'pending')
+                                                     <a href="{{ route('payment.pay', $res->id) }}" class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-sm">
+                                                         Bayar
+                                                     </a>
+                                                 @endif
+                                                 @if($canReschedule)
+                                                     <button type="button" 
+                                                             onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}')"
+                                                             data-room-id="{{ $res->meeting_room_id }}"
+                                                             class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-sm">
+                                                         Reschedule
+                                                     </button>
+                                                 @endif
+                                                 <a href="{{ route('reservation.invoice', $res->id) }}" class="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg transition">
+                                                     Invoice
+                                                 </a>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 @endforeach
+                             </div>
                         @endif
                     </div>
                 </div>
 
             </div>
+        </div>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div id="reschedule-modal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden border border-gray-100 transform scale-95 transition-transform duration-300" id="reschedule-modal-card">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-5 text-white relative">
+                <h3 class="text-xl font-bold">Reschedule Reservasi</h3>
+                <p class="text-sm text-white/80 mt-1" id="reschedule-modal-room-name">Ruang Meeting: -</p>
+                <button type="button" onclick="closeRescheduleModal()" class="absolute top-5 right-5 text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="reschedule-form" method="POST" action="" class="p-6 space-y-6">
+                @csrf
+                
+                <!-- Current Schedule Info -->
+                <div class="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-4 items-center">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 text-lg">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium">Jadwal Saat Ini</p>
+                        <p class="font-bold text-gray-800 text-sm" id="current-schedule-info">-</p>
+                    </div>
+                </div>
+
+                <!-- Input New Date -->
+                <div>
+                    <label for="reschedule-date" class="block text-sm font-bold text-gray-800 mb-2">
+                        <i class="far fa-calendar-alt text-amber-500 mr-1.5"></i> Pilih Tanggal Baru
+                    </label>
+                    <input type="date" id="reschedule-date" name="date" required
+                           min="{{ now()->addDay()->format('Y-m-d') }}"
+                           onchange="checkAvailabilityForReschedule()"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
+                </div>
+
+                <!-- Input New Session -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                        <i class="far fa-clock text-amber-500 mr-1.5"></i> Pilih Sesi Waktu Baru
+                    </label>
+                    
+                    <!-- Hidden Input for Session -->
+                    <input type="hidden" name="session_slot" id="selected-session-slot" required>
+
+                    <!-- Session Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="reschedule-sessions-container">
+                        @php
+                            $slots = [
+                                'Sesi Pagi (08:00 - 12:00)',
+                                'Sesi Siang (14:00 - 18:00)',
+                                'Sesi Malam (18:00 - 22:00)',
+                                'Sesi Fullboard (Seharian Penuh)'
+                            ];
+                            $shortLabels = [
+                                'Sesi Pagi (08:00 - 12:00)' => ['title' => 'Sesi Pagi', 'time' => '08:00 - 12:00', 'icon' => 'fa-sun text-amber-500'],
+                                'Sesi Siang (14:00 - 18:00)' => ['title' => 'Sesi Siang', 'time' => '14:00 - 18:00', 'icon' => 'fa-cloud-sun text-orange-500'],
+                                'Sesi Malam (18:00 - 22:00)' => ['title' => 'Sesi Malam', 'time' => '18:00 - 22:00', 'icon' => 'fa-moon text-indigo-500'],
+                                'Sesi Fullboard (Seharian Penuh)' => ['title' => 'Fullboard', 'time' => 'Seharian Penuh', 'icon' => 'fa-business-time text-emerald-500']
+                            ];
+                        @endphp
+
+                        @foreach($slots as $slot)
+                            @php $lbl = $shortLabels[$slot]; @endphp
+                            <div class="session-card border border-gray-200 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all duration-300 hover:border-amber-300 bg-white relative overflow-hidden" 
+                                 data-session-value="{{ $slot }}"
+                                 onclick="selectRescheduleSession(this)">
+                                
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-base">
+                                        <i class="fas {{ $lbl['icon'] }}"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm">{{ $lbl['title'] }}</h4>
+                                        <p class="text-xs text-gray-400 mt-0.5">{{ $lbl['time'] }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Checkmark indicator -->
+                                <div class="checkmark-indicator hidden w-5 h-5 bg-amber-500 rounded-full items-center justify-center text-white text-[10px] shadow-sm z-10">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                
+                                <!-- Diagonal disabled stripes using CSS gradient inline -->
+                                <div class="stripe-overlay absolute inset-0 opacity-0 transition-opacity duration-300"
+                                     style="background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #ffffff 10px, #ffffff 20px); pointer-events: none;"></div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Footer / Action Buttons -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeRescheduleModal()" class="px-5 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-700 bg-white hover:bg-gray-50 font-medium rounded-xl transition shadow-sm text-sm">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
+                        Ajukan Reschedule
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -359,6 +528,138 @@
                     fileNameDiv.classList.remove('hidden');
                 }
             }
+        }
+
+        let activeRoomId = null;
+        let activeReservationId = null;
+
+        function openRescheduleModal(resId, roomName, currentDate, currentTime) {
+            // Set dynamic fields
+            activeRoomId = null;
+            activeReservationId = resId;
+            
+            // Get Room ID from the event target or parameter
+            const btn = event.currentTarget;
+            activeRoomId = btn.getAttribute('data-room-id');
+            
+            document.getElementById('reschedule-modal-room-name').textContent = "Ruang Meeting: " + roomName;
+            
+            // Format current schedule
+            const formattedDate = new Date(currentDate).toLocaleDateString('id-ID', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('current-schedule-info').textContent = formattedDate + " (" + currentTime + ")";
+            
+            // Set form action
+            document.getElementById('reschedule-form').action = "/reservations/" + resId + "/reschedule";
+            
+            // Reset fields
+            document.getElementById('reschedule-date').value = '';
+            document.getElementById('selected-session-slot').value = '';
+            
+            // Reset session cards state
+            const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
+            cards.forEach(card => {
+                card.classList.remove('border-amber-600', 'bg-amber-50/40', 'opacity-60', 'pointer-events-none');
+                card.querySelector('.checkmark-indicator').classList.add('hidden');
+                card.querySelector('.checkmark-indicator').classList.remove('flex');
+                card.querySelector('.stripe-overlay').classList.remove('opacity-100');
+                card.querySelector('.stripe-overlay').classList.add('opacity-0');
+            });
+
+            // Show modal
+            const modal = document.getElementById('reschedule-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                document.getElementById('reschedule-modal-card').classList.remove('scale-95');
+                document.getElementById('reschedule-modal-card').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeRescheduleModal() {
+            document.getElementById('reschedule-modal-card').classList.remove('scale-100');
+            document.getElementById('reschedule-modal-card').classList.add('scale-95');
+            setTimeout(() => {
+                const modal = document.getElementById('reschedule-modal');
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 150);
+        }
+
+        function selectRescheduleSession(element) {
+            if (element.classList.contains('pointer-events-none')) return;
+            
+            // Deselect others
+            const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
+            cards.forEach(card => {
+                card.classList.remove('border-amber-600', 'bg-amber-50/40');
+                card.querySelector('.checkmark-indicator').classList.add('hidden');
+                card.querySelector('.checkmark-indicator').classList.remove('flex');
+            });
+
+            // Select clicked
+            element.classList.add('border-amber-600', 'bg-amber-50/40');
+            element.querySelector('.checkmark-indicator').classList.remove('hidden');
+            element.querySelector('.checkmark-indicator').classList.add('flex');
+            
+            // Set input value
+            document.getElementById('selected-session-slot').value = element.getAttribute('data-session-value');
+        }
+
+        function checkAvailabilityForReschedule() {
+            const dateVal = document.getElementById('reschedule-date').value;
+            if (!dateVal || !activeRoomId) return;
+
+            // Fetch booked sessions from API
+            fetch(`/api/check-availability?room_id=${activeRoomId}&date=${dateVal}`)
+                .then(response => response.json())
+                .then(data => {
+                    const bookedSessions = data.booked_sessions || [];
+                    
+                    const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
+                    cards.forEach(card => {
+                        const val = card.getAttribute('data-session-value');
+                        
+                        // Reset card state first
+                        card.classList.remove('opacity-60', 'pointer-events-none', 'border-amber-600', 'bg-amber-50/40');
+                        card.querySelector('.checkmark-indicator').classList.add('hidden');
+                        card.querySelector('.checkmark-indicator').classList.remove('flex');
+                        card.querySelector('.stripe-overlay').classList.remove('opacity-100');
+                        card.querySelector('.stripe-overlay').classList.add('opacity-0');
+
+                        // Check if session is fullboard or this session is booked
+                        const isBooked = bookedSessions.includes(val);
+                        const hasFullboard = bookedSessions.some(s => s.includes('Fullboard'));
+                        const isNewFullboard = val.includes('Fullboard');
+                        
+                        let shouldDisable = isBooked || hasFullboard || (isNewFullboard && bookedSessions.length > 0);
+                        
+                        // Handle Siang & Malam conflict rule
+                        const hasSiang = bookedSessions.some(s => s.includes('Siang'));
+                        const hasMalam = bookedSessions.some(s => s.includes('Malam'));
+                        if (!shouldDisable) {
+                            if (hasSiang && val.includes('Malam')) shouldDisable = true;
+                            if (hasMalam && val.includes('Siang')) shouldDisable = true;
+                        }
+
+                        if (shouldDisable) {
+                            card.classList.add('opacity-60', 'pointer-events-none');
+                            card.querySelector('.stripe-overlay').classList.remove('opacity-0');
+                            card.querySelector('.stripe-overlay').classList.add('opacity-100');
+                        }
+                    });
+
+                    // Clear selected session if it got disabled
+                    const selectedVal = document.getElementById('selected-session-slot').value;
+                    if (selectedVal) {
+                        const selectedCard = Array.from(cards).find(c => c.getAttribute('data-session-value') === selectedVal);
+                        if (selectedCard && selectedCard.classList.contains('pointer-events-none')) {
+                            document.getElementById('selected-session-slot').value = '';
+                        }
+                    }
+                })
+                .catch(err => console.error("Error checking availability:", err));
         }
     </script>
 </x-app-layout>

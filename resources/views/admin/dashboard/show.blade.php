@@ -35,6 +35,68 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main Content (2 columns) -->
     <div class="lg:col-span-2 space-y-6">
+        <!-- Banner Reschedule (Jika Ada) -->
+        @if($reservation->reschedule_status === 'pending')
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl shadow-sm p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-indigo-500 rounded-full opacity-10 blur-2xl"></div>
+            
+            <div class="flex items-start gap-4 relative z-10">
+                <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-calendar-alt text-indigo-600 text-xl animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-lg font-bold text-indigo-900 mb-1">Pengajuan Reschedule Jadwal</h2>
+                    <p class="text-indigo-700 text-sm mb-4">Customer mengajukan perubahan jadwal. Harap tinjau jadwal baru di bawah ini dan pastikan tidak bentrok dengan pesanan lain.</p>
+                    
+                    <div class="bg-white rounded-xl border border-indigo-100 p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Jadwal Lama</p>
+                            <p class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($reservation->date)->locale('id')->isoFormat('D MMMM Y') }}</p>
+                            <p class="text-sm text-gray-600">{{ $reservation->time }}</p>
+                        </div>
+                        <div class="md:border-l border-indigo-50 md:pl-4">
+                            <p class="text-xs text-indigo-500 font-bold mb-1">Jadwal Baru (Usulan)</p>
+                            <p class="font-bold text-indigo-900">{{ \Carbon\Carbon::parse($reservation->requested_reschedule_date)->locale('id')->isoFormat('D MMMM Y') }}</p>
+                            <p class="text-sm font-semibold text-indigo-700">{{ $reservation->requested_reschedule_session }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <form action="{{ route('admin.reservation.reschedule.approve', $reservation->id) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" onclick="return confirm('Apakah Anda yakin menyetujui perubahan jadwal ini? Jadwal lama akan dihapus dan diganti dengan jadwal baru.')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition shadow-md hover:shadow-lg flex items-center gap-2">
+                                <i class="fas fa-check"></i> Setujui Reschedule
+                            </button>
+                        </form>
+                        <button type="button" onclick="document.getElementById('reject-reschedule-modal').classList.remove('hidden'); document.getElementById('reject-reschedule-modal').classList.add('flex'); setTimeout(() => { document.getElementById('reject-reschedule-modal-card').classList.remove('scale-95'); document.getElementById('reject-reschedule-modal-card').classList.add('scale-100'); }, 10);" class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold text-sm transition shadow-sm flex items-center gap-2">
+                            <i class="fas fa-times"></i> Tolak
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @elseif($reservation->reschedule_status === 'approved')
+        <div class="bg-sky-50 border border-sky-200 rounded-2xl shadow-sm p-4 flex items-center gap-4">
+            <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-sky-600 flex-shrink-0">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <p class="font-bold text-sky-900 text-sm">Reschedule Berhasil Disetujui</p>
+                <p class="text-sky-700 text-xs">Jadwal telah diubah ke {{ \Carbon\Carbon::parse($reservation->date)->locale('id')->isoFormat('D MMMM Y') }} ({{ $reservation->time }})</p>
+            </div>
+        </div>
+        @elseif($reservation->reschedule_status === 'rejected')
+        <div class="bg-rose-50 border border-rose-200 rounded-2xl shadow-sm p-4 flex items-start gap-4">
+            <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-rose-600 flex-shrink-0">
+                <i class="fas fa-times-circle text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-rose-900 text-sm mb-1">Reschedule Ditolak</p>
+                <p class="text-rose-700 text-sm bg-rose-100/50 p-2.5 rounded-lg border border-rose-100">"{{ $reservation->reschedule_rejection_reason }}"</p>
+            </div>
+        </div>
+        @endif
+
         <!-- Data Pemesan -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -440,4 +502,37 @@
         </div>
     </div>
 </div>
+
+<!-- Reject Reschedule Modal -->
+@if($reservation->reschedule_status === 'pending')
+<div id="reject-reschedule-modal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 transform scale-95 transition-transform duration-300" id="reject-reschedule-modal-card">
+        <div class="bg-rose-50 px-6 py-5 border-b border-rose-100 relative">
+            <h3 class="text-xl font-bold text-rose-700">Tolak Reschedule</h3>
+            <button type="button" onclick="document.getElementById('reject-reschedule-modal-card').classList.remove('scale-100'); document.getElementById('reject-reschedule-modal-card').classList.add('scale-95'); setTimeout(() => { document.getElementById('reject-reschedule-modal').classList.remove('flex'); document.getElementById('reject-reschedule-modal').classList.add('hidden'); }, 150);" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <form action="{{ route('admin.reservation.reschedule.reject', $reservation->id) }}" method="POST" class="p-6">
+            @csrf
+            <div class="mb-5">
+                <label for="rejection_reason" class="block text-sm font-bold text-gray-800 mb-2">Alasan Penolakan <span class="text-red-500">*</span></label>
+                <textarea name="rejection_reason" id="rejection_reason" rows="3" required
+                          placeholder="Beri tahu pelanggan mengapa reschedule ditolak (misal: Ruangan penuh untuk sesi tersebut)..."
+                          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('reject-reschedule-modal-card').classList.remove('scale-100'); document.getElementById('reject-reschedule-modal-card').classList.add('scale-95'); setTimeout(() => { document.getElementById('reject-reschedule-modal').classList.remove('flex'); document.getElementById('reject-reschedule-modal').classList.add('hidden'); }, 150);" class="px-5 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-700 bg-white hover:bg-gray-50 font-medium rounded-xl transition shadow-sm text-sm">
+                    Batal
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
+                    Tolak Reschedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 @endsection

@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Str;
 
+$isSecureConnection = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || 
+                      (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                      (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+                      (isset($_SERVER['HTTP_FRONT_END_HTTPS']) && $_SERVER['HTTP_FRONT_END_HTTPS'] === 'on');
+
 return [
 
     /*
@@ -169,7 +174,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', $isSecureConnection),
 
     /*
     |--------------------------------------------------------------------------
@@ -199,7 +204,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => env('SESSION_SAME_SITE', $isSecureConnection ? 'none' : 'lax'),
 
     /*
     |--------------------------------------------------------------------------

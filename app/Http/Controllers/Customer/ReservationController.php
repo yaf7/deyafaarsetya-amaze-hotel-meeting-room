@@ -136,6 +136,9 @@ class ReservationController extends Controller
         $isResidential = str_contains(strtolower($package->name), 'residential');
         $residentialType = $isResidential ? $request->residential_type : null;
 
+        // Ambil data customer yang sedang login
+        $customer = auth('customer')->user();
+
         // Simpan data reservasi ke session untuk digunakan setelah buffet selection
         session([
             'reservation_data' => [
@@ -180,8 +183,9 @@ class ReservationController extends Controller
         $reservationData = session('reservation_data');
         $room = MeetingRoom::findOrFail($reservationData['room_id']);
         $package = FoodPackage::findOrFail($reservationData['food_package_id']);
+        $promotion = $reservationData['promotion_id'] ? Promotion::find($reservationData['promotion_id']) : null;
 
-        return view('customer.buffet-selection', compact('menus', 'room', 'package', 'reservationData'));
+        return view('customer.buffet-selection', compact('menus', 'room', 'package', 'reservationData', 'promotion'));
     }
 
     /**

@@ -37,7 +37,7 @@
         </div>
 
         <!-- Filter Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <!-- Room Filter -->
             <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Ruang Meeting</label>
@@ -61,6 +61,18 @@
                     <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="sukses" {{ $status == 'sukses' ? 'selected' : '' }}>Sukses</option>
                     <option value="dibatalkan" {{ $status == 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                </select>
+            </div>
+
+            <!-- Reschedule Filter -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Reschedule</label>
+                <select name="reschedule" onchange="document.getElementById('filterForm').submit()"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-300 focus:border-amber-400 bg-white">
+                    <option value="all" {{ ($reschedule ?? 'all') == 'all' ? 'selected' : '' }}>Semua</option>
+                    <option value="pending" {{ ($reschedule ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ ($reschedule ?? '') == 'approved' ? 'selected' : '' }}>Disetujui</option>
+                    <option value="rejected" {{ ($reschedule ?? '') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                 </select>
             </div>
 
@@ -94,7 +106,7 @@
         </div>
 
         <!-- Active Filters & Reset -->
-        @if($roomId !== 'all' || $status !== 'all' || $dateFrom || $dateTo || $search)
+        @if($roomId !== 'all' || $status !== 'all' || ($reschedule ?? 'all') !== 'all' || $dateFrom || $dateTo || $search)
             <div class="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
                 <span class="text-xs text-gray-500 font-medium">Filter aktif:</span>
 
@@ -114,6 +126,12 @@
                 @if($status !== 'all')
                     <span class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs px-2.5 py-1 rounded-full border border-purple-200">
                         <i class="fas fa-filter text-[10px]"></i> {{ ucfirst($status) }}
+                    </span>
+                @endif
+
+                @if(($reschedule ?? 'all') !== 'all')
+                    <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full border border-indigo-200">
+                        <i class="fas fa-calendar-alt text-[10px]"></i> Reschedule: {{ ucfirst($reschedule) }}
                     </span>
                 @endif
 
@@ -230,6 +248,26 @@
                                         <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Dibatalkan
                                     </span>
                                 @endif
+
+                                @if($res->reschedule_status === 'pending')
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200 animate-pulse">
+                                            <i class="fas fa-clock text-[9px]"></i> Pending Reschedule
+                                        </span>
+                                    </div>
+                                @elseif($res->reschedule_status === 'approved')
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-200">
+                                            <i class="fas fa-calendar-check text-[9px]"></i> Rescheduled
+                                        </span>
+                                    </div>
+                                @elseif($res->reschedule_status === 'rejected')
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-200" title="Alasan: {{ $res->reschedule_rejection_reason }}">
+                                            <i class="fas fa-times-circle text-[9px]"></i> Reschedule Ditolak
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-5 py-4 text-center">
                                 <a href="{{ route('admin.reservation.show', $res->id) }}"
@@ -297,19 +335,41 @@
                 </div>
 
                 <div class="flex items-center justify-between">
-                    <div>
-                        @if($res->status == 'sukses')
-                            <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sukses
-                            </span>
-                        @elseif($res->status == 'pending')
-                            <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Pending
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-red-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Dibatalkan
-                            </span>
+                    <div class="flex flex-col gap-1 items-start">
+                        <div>
+                            @if($res->status == 'sukses')
+                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sukses
+                                </span>
+                            @elseif($res->status == 'pending')
+                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Pending
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-red-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Dibatalkan
+                                </span>
+                            @endif
+                        </div>
+
+                        @if($res->reschedule_status === 'pending')
+                            <div>
+                                <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-indigo-200 animate-pulse">
+                                    <i class="fas fa-clock text-[9px]"></i> Pending Reschedule
+                                </span>
+                            </div>
+                        @elseif($res->reschedule_status === 'approved')
+                            <div>
+                                <span class="inline-flex items-center gap-1 bg-sky-50 text-sky-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-200">
+                                    <i class="fas fa-calendar-check text-[9px]"></i> Rescheduled
+                                </span>
+                            </div>
+                        @elseif($res->reschedule_status === 'rejected')
+                            <div>
+                                <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-200" title="Alasan: {{ $res->reschedule_rejection_reason }}">
+                                    <i class="fas fa-times-circle text-[9px]"></i> Reschedule Ditolak
+                                </span>
+                            </div>
                         @endif
                     </div>
                     <a href="{{ route('admin.reservation.show', $res->id) }}"

@@ -121,6 +121,20 @@
                     <span class="sidebar-text">Dashboard</span>
                 </a>
 
+                <a href="{{ route('admin.reservations') }}" data-tooltip="Semua Reservasi"
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.reservations') || request()->routeIs('admin.reservation.show') ? 'bg-amber-500 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <i class="fas fa-calendar-check w-5 text-center"></i>
+                    <span class="sidebar-text">Semua Reservasi</span>
+                    @php
+                        $pendingRescheduleCount = \App\Models\Reservation::where('reschedule_status', 'pending')->count();
+                    @endphp
+                    @if($pendingRescheduleCount > 0)
+                        <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full sidebar-text animate-pulse">
+                            {{ $pendingRescheduleCount }}
+                        </span>
+                    @endif
+                </a>
+
                 <a href="{{ route('admin.rooms.index') }}" data-tooltip="Kelola Ruang"
                    class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ request()->routeIs('admin.rooms.*') ? 'bg-amber-500 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
                     <i class="fas fa-door-open w-5 text-center"></i>
@@ -188,6 +202,14 @@
             <nav class="p-4 space-y-1">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('admin.dashboard') ? 'bg-amber-500 text-white' : 'text-gray-400 hover:bg-gray-800' }}">
                     <i class="fas fa-home w-5"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ route('admin.reservations') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('admin.reservations') || request()->routeIs('admin.reservation.show') ? 'bg-amber-500 text-white' : 'text-gray-400 hover:bg-gray-800' }}">
+                    <i class="fas fa-calendar-check w-5"></i><span>Semua Reservasi</span>
+                    @if($pendingRescheduleCount > 0)
+                        <span class="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {{ $pendingRescheduleCount }}
+                        </span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.rooms.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('admin.rooms.*') ? 'bg-amber-500 text-white' : 'text-gray-400 hover:bg-gray-800' }}">
                     <i class="fas fa-door-open w-5"></i><span>Kelola Ruang</span>

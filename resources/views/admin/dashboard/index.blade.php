@@ -6,6 +6,28 @@
     <p class="text-gray-600">Amaze Hotel Kediri</p>
 </div>
 
+@php
+    $pendingRescheduleCount = \App\Models\Reservation::where('reschedule_status', 'pending')->count();
+@endphp
+
+@if($pendingRescheduleCount > 0)
+    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6 rounded-r-xl shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                <i class="fas fa-calendar-alt text-lg animate-bounce"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-indigo-900 text-sm sm:text-base">Pengajuan Reschedule Menunggu Persetujuan</h4>
+                <p class="text-xs sm:text-sm text-indigo-700 mt-0.5">Ada {{ $pendingRescheduleCount }} pengajuan reschedule jadwal yang memerlukan konfirmasi Anda.</p>
+            </div>
+        </div>
+        <a href="{{ route('admin.reservations', ['status' => 'all', 'search' => '', 'room' => 'all', 'reschedule' => 'pending']) }}" 
+           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm whitespace-nowrap">
+            Lihat Pengajuan
+        </a>
+    </div>
+@endif
+
 <!-- Statistik Utama -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <!-- Total Reservasi -->

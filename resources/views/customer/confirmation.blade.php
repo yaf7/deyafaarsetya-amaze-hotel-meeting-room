@@ -201,9 +201,29 @@
                             </div>
                         @endif
                         
-                        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
-                            <span class="text-gray-700 font-semibold">Total Pembayaran</span>
-                            <span class="text-2xl font-bold text-primary-600">Rp{{ number_format($reservation->total_price, 0, ',', '.') }}</span>
+                        <div class="pt-4 border-t border-gray-200 space-y-3">
+                            @if($reservation->promotion)
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-500">Subtotal</span>
+                                    <span class="font-semibold text-gray-800">Rp{{ number_format($reservation->total_price, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                                    <span class="flex items-center gap-1.5 text-sm">
+                                        <i class="fas fa-tag text-xs"></i>
+                                        {{ $reservation->promotion->name }} ({{ number_format($reservation->promotion->discount, 0) }}%)
+                                    </span>
+                                    <span class="font-bold text-sm">- Rp{{ number_format($discountAmount, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-200">
+                                    <span class="text-gray-700 font-semibold">Total Pembayaran</span>
+                                    <span class="text-2xl font-bold text-primary-600">Rp{{ number_format($totalAfterDiscount, 0, ',', '.') }}</span>
+                                </div>
+                            @else
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700 font-semibold">Total Pembayaran</span>
+                                    <span class="text-2xl font-bold text-primary-600">Rp{{ number_format($reservation->total_price, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

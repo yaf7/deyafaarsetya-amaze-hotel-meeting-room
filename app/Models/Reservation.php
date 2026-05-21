@@ -27,7 +27,8 @@ class Reservation extends Model
         'requested_reschedule_date',
         'requested_reschedule_session',
         'reschedule_rejection_reason',
-        'reschedule_count'
+        'reschedule_count',
+        'reschedule_notification_read'
     ];
 
     protected $casts = [
@@ -37,7 +38,8 @@ class Reservation extends Model
         'whatsapp_sent' => 'boolean',
         'whatsapp_sent_at' => 'datetime',
         'requested_reschedule_date' => 'date',
-        'reschedule_count' => 'integer'
+        'reschedule_count' => 'integer',
+        'reschedule_notification_read' => 'boolean'
     ];
 
     // Relasi

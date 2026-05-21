@@ -31,5 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Handle 419 CSRF token expired — redirect ke halaman login
+        $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->is('admin') || $request->is('admin/*')) {
+                return redirect()->route('admin.login')->with('error', 'Sesi Anda telah habis. Silakan login kembali.');
+            }
+            return redirect()->route('login')->with('error', 'Sesi Anda telah habis. Silakan login kembali.');
+        });
     })->create();

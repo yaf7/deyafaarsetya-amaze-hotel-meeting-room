@@ -14,9 +14,15 @@ class ProfileController extends Controller
     {
         $user = auth('customer')->user();
         $reservations = $user->reservations()
-            ->with(['meetingRoom', 'payment'])
+            ->with(['meetingRoom', 'foodPackage', 'payment'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Tandai semua notifikasi reschedule yang belum dibaca sebagai sudah dibaca
+        $user->reservations()
+            ->whereIn('reschedule_status', ['approved', 'rejected'])
+            ->where('reschedule_notification_read', false)
+            ->update(['reschedule_notification_read' => true]);
             
         return view('customer.profile.edit', compact('user', 'reservations'));
     }

@@ -492,8 +492,24 @@
                                         <span class="flex items-center gap-1.5 text-xs"><i class="fas fa-bed"></i> Akomodasi Kamar Transit</span>
                                         <span class="font-bold text-xs">+ Rp<span id="est-room-cost">0</span></span>
                                     </div>
+
+                                    <!-- Subtotal sebelum diskon -->
+                                    <div class="border-t border-dashed border-amber-200/80 my-3 pt-3">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-700 text-sm">Subtotal</span>
+                                            <span class="font-semibold text-gray-700">Rp<span id="est-subtotal">0</span></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Diskon Promo (hidden by default) -->
+                                    <div id="est-discount-row" class="hidden">
+                                        <div class="flex justify-between items-center text-green-600 bg-green-50/60 px-3 py-1.5 rounded-lg border border-green-100">
+                                            <span class="flex items-center gap-1.5 text-xs"><i class="fas fa-tag"></i> Diskon Promo (<span id="est-discount-percent">0</span>%)</span>
+                                            <span class="font-bold text-xs">- Rp<span id="est-discount-amount">0</span></span>
+                                        </div>
+                                    </div>
                                     
-                                    <!-- Elegant Dashed Border Divider -->
+                                    <!-- Total Akhir -->
                                     <div class="border-t border-dashed border-amber-200/80 my-3 pt-3">
                                         <div class="flex justify-between items-center">
                                             <span class="font-bold text-gray-800 text-sm uppercase">Total Estimasi</span>
@@ -509,17 +525,17 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-tag text-orange-500 mr-2"></i>Gunakan Promo (Opsional)
                             </label>
-                            <select name="promotion_id" class="input-modern focus:border-amber-500 focus:ring-0">
-                                <option value="">Tidak Pakai Promo</option>
+                            <select name="promotion_id" id="promo-select" class="input-modern focus:border-amber-500 focus:ring-0">
+                                <option value="" data-discount="0">Tidak Pakai Promo</option>
                                 @foreach ($promotions as $promo)
-                                    <option value="{{ $promo->id }}" {{ old('promotion_id') == $promo->id ? 'selected' : '' }}>
+                                    <option value="{{ $promo->id }}" data-discount="{{ $promo->discount }}" {{ old('promotion_id') == $promo->id ? 'selected' : '' }}>
                                         {{ $promo->name }} (Diskon {{ number_format($promo->discount, 2) }}%)
                                     </option>
                                 @endforeach
                             </select>
                             <p class="text-xs sm:text-sm text-gray-500 mt-2">
                                 <i class="fas fa-info-circle text-gray-400 mr-1"></i>
-                                Diskon akan diterapkan di halaman konfirmasi
+                                Diskon promo akan langsung terlihat pada estimasi biaya
                             </p>
                         </div>
 
@@ -715,26 +731,49 @@
                 }
             }
 
+            function getSelectedPromoDiscount() {
+                const promoSelect = document.getElementById('promo-select');
+                const selected = promoSelect.options[promoSelect.selectedIndex];
+                return parseFloat(selected?.dataset?.discount) || 0;
+            }
+
             function calculateTotal() {
                 const pkg = getSelectedPackage();
                 const participants = parseInt(document.getElementById('participants-input').value) || 0;
                 const stickyBar = document.getElementById('sticky-price-bar');
                 if (!pkg || participants < 1) { priceEstimation.classList.add('hidden'); stickyBar.classList.add('hidden'); return; }
                 priceEstimation.classList.remove('hidden'); stickyBar.classList.remove('hidden');
-                let total = 0, pricePerPax = pkg.price, roomAddon = 0;
+                let subtotal = 0, pricePerPax = pkg.price, roomAddon = 0;
                 const estRoomAddon = document.getElementById('est-room-addon');
                 if (isResidential(pkg.name) && CALC_MAP[pkg.name]) {
                     const rt = getResidentialType(), calc = CALC_MAP[pkg.name];
                     pricePerPax = calc.base; roomAddon = rt === 'twin' ? calc.twin_addon : calc.single_addon;
-                    total = (calc.base * participants) + roomAddon;
+                    subtotal = (calc.base * participants) + roomAddon;
                     estRoomAddon.classList.remove('hidden'); document.getElementById('est-room-cost').textContent = formatRupiah(roomAddon);
-                } else { total = pkg.price * participants; estRoomAddon.classList.add('hidden'); }
+                } else { subtotal = pkg.price * participants; estRoomAddon.classList.add('hidden'); }
+
+                const discountPercent = getSelectedPromoDiscount();
+                const discountAmount = Math.round((subtotal * discountPercent) / 100);
+                const totalAfterDiscount = subtotal - discountAmount;
+
                 document.getElementById('est-package-name').textContent = pkg.name;
                 document.getElementById('est-price-per-pax').textContent = formatRupiah(pricePerPax);
                 document.getElementById('est-participants').textContent = participants;
-                document.getElementById('est-total').textContent = formatRupiah(total);
-                document.getElementById('sticky-total').textContent = formatRupiah(total);
-                document.getElementById('sticky-detail').textContent = `${participants} pax Ã— ${pkg.name}`;
+                document.getElementById('est-subtotal').textContent = formatRupiah(subtotal);
+
+                const discountRow = document.getElementById('est-discount-row');
+                if (discountPercent > 0) {
+                    discountRow.classList.remove('hidden');
+                    document.getElementById('est-discount-percent').textContent = discountPercent;
+                    document.getElementById('est-discount-amount').textContent = formatRupiah(discountAmount);
+                } else {
+                    discountRow.classList.add('hidden');
+                }
+
+                document.getElementById('est-total').textContent = formatRupiah(totalAfterDiscount);
+                document.getElementById('sticky-total').textContent = formatRupiah(totalAfterDiscount);
+                const promoLabel = discountPercent > 0 ? ` (diskon ${discountPercent}%)` : '';
+                document.getElementById('sticky-detail').textContent = `${participants} pax × ${pkg.name}${promoLabel}`;
             }
 
             // === Events ===
@@ -759,6 +798,7 @@
             sessionSlot.addEventListener('change', syncPackageFromSession);
             document.querySelectorAll('.residential-radio').forEach(r => r.addEventListener('change', () => { updatePriceDisplay(); calculateTotal(); }));
             document.getElementById('participants-input').addEventListener('input', calculateTotal);
+            document.getElementById('promo-select').addEventListener('change', calculateTotal);
 
             // === Pre-fill from URL (availability board) ===
             const urlParams = new URLSearchParams(window.location.search);

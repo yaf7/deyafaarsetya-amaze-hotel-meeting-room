@@ -29,13 +29,66 @@
                 </div>
             @endif
 
+            @php
+                $activeReschedules = $reservations->filter(function($res) {
+                    return in_array($res->reschedule_status, ['approved', 'rejected']) && !$res->reschedule_notification_read;
+                });
+            @endphp
+
+            @if($activeReschedules->count() > 0)
+                <div class="space-y-4 mb-6">
+                    @foreach($activeReschedules as $res)
+                        @if($res->reschedule_status === 'approved')
+                            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                                <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-soft">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <h4 class="font-bold text-emerald-800 text-base">Reschedule Disetujui</h4>
+                                        <span class="text-xs font-semibold text-emerald-600 bg-emerald-100/60 px-3 py-1 rounded-full w-max">Reservasi #{{ str_pad($res->id, 6, '0', STR_PAD_LEFT) }}</span>
+                                    </div>
+                                    <p class="text-sm text-emerald-700/90 mt-2 leading-relaxed">
+                                        Pengajuan reschedule Anda untuk <strong>{{ $res->meetingRoom->name }}</strong> telah <strong>disetujui</strong> oleh admin. Acara Anda telah dijadwalkan ulang pada hari <strong>{{ \Carbon\Carbon::parse($res->date)->locale('id')->isoFormat('dddd, D MMMM Y') }}</strong> pukul <strong>{{ $res->time }}</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        @elseif($res->reschedule_status === 'rejected')
+                            <div class="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-100 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                                <div class="w-10 h-10 bg-rose-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-soft">
+                                    <i class="fas fa-calendar-times"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <h4 class="font-bold text-rose-800 text-base">Reschedule Ditolak</h4>
+                                        <span class="text-xs font-semibold text-rose-600 bg-rose-100/60 px-3 py-1 rounded-full w-max">Reservasi #{{ str_pad($res->id, 6, '0', STR_PAD_LEFT) }}</span>
+                                    </div>
+                                    <p class="text-sm text-rose-700/90 mt-2 leading-relaxed">
+                                        Pengajuan reschedule Anda untuk <strong>{{ $res->meetingRoom->name }}</strong> telah <strong>ditolak</strong> oleh admin.
+                                    </p>
+                                    @if($res->reschedule_rejection_reason)
+                                        <div class="mt-3 bg-white/60 backdrop-blur-sm border border-rose-100/80 rounded-xl p-3 text-xs sm:text-sm text-rose-800 italic font-medium">
+                                            <span class="font-bold not-italic block text-rose-700 text-xs mb-1"><i class="fas fa-info-circle mr-1"></i> Alasan Penolakan:</span>
+                                            "{{ $res->reschedule_rejection_reason }}"
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @endif
+
             <!-- Tabs Navigation -->
             <div class="bg-white rounded-t-2xl border-b border-gray-200 px-6 pt-6 flex gap-6 overflow-x-auto">
                 <button onclick="switchTab('profile')" id="tab-profile" class="pb-4 font-semibold text-amber-600 border-b-2 border-amber-600 whitespace-nowrap transition-colors">
                     <i class="fas fa-user-circle mr-2"></i>Profil & Pengaturan
                 </button>
-                <button onclick="switchTab('history')" id="tab-history" class="pb-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 whitespace-nowrap transition-colors">
-                    <i class="fas fa-history mr-2"></i>Riwayat Reservasi
+                <button onclick="switchTab('history')" id="tab-history" class="pb-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 whitespace-nowrap transition-colors flex items-center gap-2">
+                    <i class="fas fa-history"></i>Riwayat Reservasi
+                    @if($activeReschedules->count() > 0)
+                        <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{{ $activeReschedules->count() }}</span>
+                    @endif
                 </button>
             </div>
 
@@ -245,7 +298,7 @@
                                                             @endif
                                                             @if($canReschedule)
                                                                 <button type="button" 
-                                                                        onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}')"
+                                                                        onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}', '{{ $res->foodPackage->name }}')"
                                                                         data-room-id="{{ $res->meeting_room_id }}"
                                                                         class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
                                                                     <i class="fas fa-calendar-alt text-[10px]"></i> Reschedule
@@ -338,7 +391,7 @@
                                                  @endif
                                                  @if($canReschedule)
                                                      <button type="button" 
-                                                             onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}')"
+                                                             onclick="openRescheduleModal({{ $res->id }}, '{{ $res->meetingRoom->name }}', '{{ $res->date->format('Y-m-d') }}', '{{ $res->time }}', '{{ $res->foodPackage->name }}')"
                                                              data-room-id="{{ $res->meeting_room_id }}"
                                                              class="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition shadow-sm">
                                                          Reschedule
@@ -396,6 +449,9 @@
                            min="{{ now()->addDay()->format('Y-m-d') }}"
                            onchange="checkAvailabilityForReschedule()"
                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
+                    
+                    <!-- Availability Alert -->
+                    <div id="reschedule-date-alert" class="hidden mt-3 rounded-xl p-3.5 text-sm font-medium flex items-center gap-3"></div>
                 </div>
 
                 <!-- Input New Session -->
@@ -458,7 +514,7 @@
                     <button type="button" onclick="closeRescheduleModal()" class="px-5 py-2.5 border border-gray-200 text-gray-500 hover:text-gray-700 bg-white hover:bg-gray-50 font-medium rounded-xl transition shadow-sm text-sm">
                         Batal
                     </button>
-                    <button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
+                    <button type="submit" id="reschedule-submit-btn" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
                         Ajukan Reschedule
                     </button>
                 </div>
@@ -532,11 +588,19 @@
 
         let activeRoomId = null;
         let activeReservationId = null;
+        let isFullboardLocked = false;
 
-        function openRescheduleModal(resId, roomName, currentDate, currentTime) {
+        function isFullDayOrMorePackage(pkgName) {
+            if (!pkgName) return false;
+            const lower = pkgName.toLowerCase();
+            return lower.includes('full day') || lower.includes('full board') || lower.includes('residential');
+        }
+
+        function openRescheduleModal(resId, roomName, currentDate, currentTime, packageName) {
             // Set dynamic fields
             activeRoomId = null;
             activeReservationId = resId;
+            isFullboardLocked = isFullDayOrMorePackage(packageName);
             
             // Get Room ID from the event target or parameter
             const btn = event.currentTarget;
@@ -557,6 +621,16 @@
             document.getElementById('reschedule-date').value = '';
             document.getElementById('selected-session-slot').value = '';
             
+            // Reset availability alert
+            const dateAlert = document.getElementById('reschedule-date-alert');
+            dateAlert.classList.add('hidden');
+            dateAlert.innerHTML = '';
+            
+            // Reset submit button
+            const submitBtn = document.getElementById('reschedule-submit-btn');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
             // Reset session cards state
             const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
             cards.forEach(card => {
@@ -566,6 +640,25 @@
                 card.querySelector('.stripe-overlay').classList.remove('opacity-100');
                 card.querySelector('.stripe-overlay').classList.add('opacity-0');
             });
+
+            // Jika paket Full Day/Full Board/Residential, kunci ke Fullboard
+            if (isFullboardLocked) {
+                cards.forEach(card => {
+                    const val = card.getAttribute('data-session-value');
+                    if (val.includes('Fullboard')) {
+                        // Auto-select Fullboard
+                        card.classList.add('border-amber-600', 'bg-amber-50/40');
+                        card.querySelector('.checkmark-indicator').classList.remove('hidden');
+                        card.querySelector('.checkmark-indicator').classList.add('flex');
+                        document.getElementById('selected-session-slot').value = val;
+                    } else {
+                        // Disable semua sesi lain
+                        card.classList.add('opacity-60', 'pointer-events-none');
+                        card.querySelector('.stripe-overlay').classList.remove('opacity-0');
+                        card.querySelector('.stripe-overlay').classList.add('opacity-100');
+                    }
+                });
+            }
 
             // Show modal
             const modal = document.getElementById('reschedule-modal');
@@ -590,6 +683,9 @@
         function selectRescheduleSession(element) {
             if (element.classList.contains('pointer-events-none')) return;
             
+            // Jika fullboard locked, jangan izinkan ubah sesi
+            if (isFullboardLocked) return;
+            
             // Deselect others
             const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
             cards.forEach(card => {
@@ -609,15 +705,24 @@
 
         function checkAvailabilityForReschedule() {
             const dateVal = document.getElementById('reschedule-date').value;
-            if (!dateVal || !activeRoomId) return;
+            const dateAlert = document.getElementById('reschedule-date-alert');
+            const submitBtn = document.getElementById('reschedule-submit-btn');
+            
+            if (!dateVal || !activeRoomId) {
+                dateAlert.classList.add('hidden');
+                return;
+            }
 
             // Fetch booked sessions from API
             fetch(`/api/check-availability?room_id=${activeRoomId}&date=${dateVal}`)
                 .then(response => response.json())
                 .then(data => {
                     const bookedSessions = data.booked_sessions || [];
+                    let allDisabled = false;
                     
                     const cards = document.querySelectorAll('#reschedule-sessions-container .session-card');
+                    let disabledCount = 0;
+                    
                     cards.forEach(card => {
                         const val = card.getAttribute('data-session-value');
                         
@@ -627,6 +732,35 @@
                         card.querySelector('.checkmark-indicator').classList.remove('flex');
                         card.querySelector('.stripe-overlay').classList.remove('opacity-100');
                         card.querySelector('.stripe-overlay').classList.add('opacity-0');
+
+                        // Jika fullboard locked, kunci sesi selain Fullboard
+                        if (isFullboardLocked) {
+                            if (val.includes('Fullboard')) {
+                                // Cek apakah Fullboard itu sendiri booked
+                                const isBooked = bookedSessions.includes(val);
+                                const hasFullboard = bookedSessions.some(s => s.includes('Fullboard'));
+                                const hasAnyBooking = bookedSessions.length > 0;
+                                
+                                if (isBooked || hasFullboard || hasAnyBooking) {
+                                    card.classList.add('opacity-60', 'pointer-events-none');
+                                    card.querySelector('.stripe-overlay').classList.remove('opacity-0');
+                                    card.querySelector('.stripe-overlay').classList.add('opacity-100');
+                                    document.getElementById('selected-session-slot').value = '';
+                                    allDisabled = true;
+                                } else {
+                                    // Auto-select Fullboard
+                                    card.classList.add('border-amber-600', 'bg-amber-50/40');
+                                    card.querySelector('.checkmark-indicator').classList.remove('hidden');
+                                    card.querySelector('.checkmark-indicator').classList.add('flex');
+                                    document.getElementById('selected-session-slot').value = val;
+                                }
+                            } else {
+                                card.classList.add('opacity-60', 'pointer-events-none');
+                                card.querySelector('.stripe-overlay').classList.remove('opacity-0');
+                                card.querySelector('.stripe-overlay').classList.add('opacity-100');
+                            }
+                            return;
+                        }
 
                         // Check if session is fullboard or this session is booked
                         const isBooked = bookedSessions.includes(val);
@@ -647,16 +781,48 @@
                             card.classList.add('opacity-60', 'pointer-events-none');
                             card.querySelector('.stripe-overlay').classList.remove('opacity-0');
                             card.querySelector('.stripe-overlay').classList.add('opacity-100');
+                            disabledCount++;
                         }
                     });
 
-                    // Clear selected session if it got disabled
-                    const selectedVal = document.getElementById('selected-session-slot').value;
-                    if (selectedVal) {
-                        const selectedCard = Array.from(cards).find(c => c.getAttribute('data-session-value') === selectedVal);
-                        if (selectedCard && selectedCard.classList.contains('pointer-events-none')) {
-                            document.getElementById('selected-session-slot').value = '';
+                    // Clear selected session if it got disabled (non-locked mode)
+                    if (!isFullboardLocked) {
+                        const selectedVal = document.getElementById('selected-session-slot').value;
+                        if (selectedVal) {
+                            const selectedCard = Array.from(cards).find(c => c.getAttribute('data-session-value') === selectedVal);
+                            if (selectedCard && selectedCard.classList.contains('pointer-events-none')) {
+                                document.getElementById('selected-session-slot').value = '';
+                            }
                         }
+                        allDisabled = (disabledCount >= cards.length);
+                    }
+
+                    // Show/hide availability alert and toggle submit button
+                    const formattedDate = new Date(dateVal).toLocaleDateString('id-ID', {
+                        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                    });
+
+                    if (allDisabled) {
+                        dateAlert.className = 'mt-3 rounded-xl p-3.5 text-sm font-medium flex items-center gap-3 bg-red-50 border border-red-100 text-red-700';
+                        dateAlert.innerHTML = '<div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0"><i class="fas fa-exclamation-circle text-red-500"></i></div>' +
+                            '<span>Tanggal <strong>' + formattedDate + '</strong> sudah penuh. Silakan pilih tanggal lain.</span>';
+                        dateAlert.classList.remove('hidden');
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else if (bookedSessions.length > 0 && !isFullboardLocked) {
+                        dateAlert.className = 'mt-3 rounded-xl p-3.5 text-sm font-medium flex items-center gap-3 bg-amber-50 border border-amber-100 text-amber-700';
+                        dateAlert.innerHTML = '<div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0"><i class="fas fa-info-circle text-amber-500"></i></div>' +
+                            '<span>Beberapa sesi pada tanggal ini sudah terisi. Silakan pilih sesi yang tersedia.</span>';
+                        dateAlert.classList.remove('hidden');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        dateAlert.className = 'mt-3 rounded-xl p-3.5 text-sm font-medium flex items-center gap-3 bg-emerald-50 border border-emerald-100 text-emerald-700';
+                        dateAlert.innerHTML = '<div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0"><i class="fas fa-check-circle text-emerald-500"></i></div>' +
+                            '<span>Tanggal <strong>' + formattedDate + '</strong> tersedia untuk reschedule.</span>';
+                        dateAlert.classList.remove('hidden');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     }
                 })
                 .catch(err => console.error("Error checking availability:", err));

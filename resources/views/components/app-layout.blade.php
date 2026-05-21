@@ -59,11 +59,23 @@
                     <!-- CTA & Auth Button - Elegant -->
                     <div class="hidden md:flex items-center gap-4">
                         @if(auth('customer')->check())
-                            @php $user = auth('customer')->user(); @endphp
+                            @php 
+                                $user = auth('customer')->user(); 
+                                $unreadRescheduleCount = $user->reservations()
+                                    ->whereIn('reschedule_status', ['approved', 'rejected'])
+                                    ->where('reschedule_notification_read', false)
+                                    ->count();
+                            @endphp
                             <!-- Account Dropdown -->
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" @click.outside="open = false" 
-                                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-amber-500 transition-all shadow-sm">
+                                    class="relative inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-amber-500 transition-all shadow-sm">
+                                    @if($unreadRescheduleCount > 0)
+                                        <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                                        </span>
+                                    @endif
                                     @if($user->photo)
                                         <img src="{{ asset('storage/' . $user->photo) }}" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-amber-100">
                                     @else
@@ -89,9 +101,16 @@
                                         <p class="text-xs text-gray-400">Selamat datang,</p>
                                         <p class="text-sm font-bold text-gray-800 truncate">{{ $user->name }}</p>
                                     </div>
-                                    <a href="{{ route('customer.profile') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors">
-                                        <i class="fas fa-user text-xs w-4"></i>
-                                        <span>Profil Saya</span>
+                                    <a href="{{ route('customer.profile') }}" class="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user text-xs w-4"></i>
+                                            <span>Profil Saya</span>
+                                        </div>
+                                        @if($unreadRescheduleCount > 0)
+                                            <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                                {{ $unreadRescheduleCount }}
+                                            </span>
+                                        @endif
                                     </a>
                                     <form action="{{ route('customer.logout') }}" method="POST" class="block m-0">
                                         @csrf
@@ -128,7 +147,13 @@
             <div class="md:hidden hidden bg-white border-t border-gray-100" id="mobile-menu">
                 <div class="px-4 py-4 space-y-1">
                     @if(auth('customer')->check())
-                        @php $user = auth('customer')->user(); @endphp
+                        @php 
+                            $user = auth('customer')->user(); 
+                            $unreadRescheduleCount = $user->reservations()
+                                ->whereIn('reschedule_status', ['approved', 'rejected'])
+                                ->where('reschedule_notification_read', false)
+                                ->count();
+                        @endphp
                         <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-100 mb-2">
                             @if($user->photo)
                                 <img src="{{ asset('storage/' . $user->photo) }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-amber-100">
@@ -143,8 +168,15 @@
                             </div>
                         </div>
                         <a href="{{ route('customer.profile') }}"
-                            class="block px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
-                            <i class="fas fa-user-circle mr-2 text-gray-400"></i> Profil Saya
+                            class="flex items-center justify-between px-4 py-3 text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg font-medium transition-colors">
+                            <div class="flex items-center">
+                                <i class="fas fa-user-circle mr-2 text-gray-400"></i> Profil Saya
+                            </div>
+                            @if($unreadRescheduleCount > 0)
+                                <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                    {{ $unreadRescheduleCount }}
+                                </span>
+                            @endif
                         </a>
                     @else
                         <div class="grid grid-cols-2 gap-2 px-4 py-2 border-b border-gray-100 mb-2">

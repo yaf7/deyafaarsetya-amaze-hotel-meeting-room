@@ -22,6 +22,118 @@
     <!-- Buffet Selection Section -->
     <section class="py-8 sm:py-12 bg-gray-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Ringkasan Data Reservasi -->
+            <div class="bg-white rounded-2xl shadow-card p-5 sm:p-6 md:p-8 border border-gray-100/60 mb-6 sm:mb-8">
+                <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-amber-500 text-white shadow-sm">
+                        <i class="fas fa-clipboard-list text-sm"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-gray-800">Ringkasan Reservasi Anda</h2>
+                        <p class="text-[11px] sm:text-xs text-gray-500">Data yang sudah Anda isi sebelumnya</p>
+                    </div>
+                    <a href="{{ route('reservation.form', $reservationData['room_id']) }}" class="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 bg-gray-100 hover:bg-amber-50 text-gray-600 hover:text-amber-600 border border-gray-200 hover:border-amber-300 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200">
+                        <i class="fas fa-edit text-[10px]"></i>
+                        <span class="hidden sm:inline">Ubah Data</span>
+                        <span class="sm:hidden">Ubah</span>
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                    <!-- Ruangan -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-door-open text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Ruangan</p>
+                            <p class="text-sm font-semibold text-gray-800 truncate">{{ $room->name }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Tanggal -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-calendar text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Tanggal Acara</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ \Carbon\Carbon::parse($reservationData['date'])->translatedFormat('l, d F Y') }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Sesi Waktu -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-clock text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Sesi Waktu</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ $reservationData['time'] }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Jumlah Peserta -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-users text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Jumlah Peserta</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ $reservationData['participants'] }} orang</p>
+                        </div>
+                    </div>
+
+                    <!-- Layout -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-teal-100 text-teal-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-th-large text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Layout Ruangan</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ ucfirst(str_replace('_', ' ', $reservationData['layout'])) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Paket Meeting -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-utensils text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Paket Meeting</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ $package->name }}</p>
+                        </div>
+                    </div>
+
+                    @if($reservationData['residential_type'])
+                    <!-- Tipe Kamar -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-bed text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Tipe Kamar</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ $reservationData['residential_type'] === 'twin' ? 'Twin Sharing' : 'Single Occupancy' }}</p>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($promotion)
+                    <!-- Promo -->
+                    <div class="flex items-start gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-600 flex-shrink-0 mt-0.5">
+                            <i class="fas fa-tag text-sm"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">Promo</p>
+                            <p class="text-sm font-semibold text-green-700">{{ $promotion->name }} <span class="text-xs font-normal text-green-500">({{ number_format($promotion->discount, 0) }}%)</span></p>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
             <!-- Komposisi Buffet Standar -->
             <div class="card p-6 mb-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">

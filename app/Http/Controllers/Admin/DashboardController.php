@@ -79,6 +79,12 @@ class DashboardController extends Controller
             $query->where('status', $status);
         }
 
+        // Filter by reschedule status
+        $reschedule = $request->get('reschedule', 'all');
+        if ($reschedule !== 'all') {
+            $query->where('reschedule_status', $reschedule);
+        }
+
         // Filter by date range
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -126,6 +132,7 @@ class DashboardController extends Controller
             'rooms',
             'roomId',
             'status',
+            'reschedule',
             'sortBy',
             'dateFrom',
             'dateTo',
@@ -314,7 +321,8 @@ class DashboardController extends Controller
             'reschedule_count' => $reservation->reschedule_count + 1,
             'requested_reschedule_date' => null,
             'requested_reschedule_session' => null,
-            'reschedule_rejection_reason' => null
+            'reschedule_rejection_reason' => null,
+            'reschedule_notification_read' => false
         ]);
 
         return back()->with('success', 'Pengajuan reschedule berhasil disetujui.');
@@ -341,7 +349,8 @@ class DashboardController extends Controller
             'reschedule_status' => 'rejected',
             'reschedule_rejection_reason' => $request->rejection_reason,
             'requested_reschedule_date' => null,
-            'requested_reschedule_session' => null
+            'requested_reschedule_session' => null,
+            'reschedule_notification_read' => false
         ]);
 
         return back()->with('success', 'Pengajuan reschedule berhasil ditolak.');

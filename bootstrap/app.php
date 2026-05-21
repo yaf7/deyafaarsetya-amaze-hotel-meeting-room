@@ -41,4 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             return redirect()->route('login')->with('error', 'Sesi Anda telah habis. Silakan login kembali.');
         });
+
+        // Tangkap juga Symfony HttpException 419 sebagai fallback
+        $exceptions->renderable(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if ($e->getStatusCode() === 419) {
+                if ($request->is('admin') || $request->is('admin/*')) {
+                    return redirect()->route('admin.login')->with('error', 'Sesi Anda telah habis. Silakan login kembali.');
+                }
+                return redirect()->route('login')->with('error', 'Sesi Anda telah habis. Silakan login kembali.');
+            }
+        });
     })->create();

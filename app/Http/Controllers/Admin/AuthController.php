@@ -10,6 +10,11 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
+        // Jika sudah login sebagai admin, redirect ke dashboard
+        if (Auth::guard('web')->check() && Auth::guard('web')->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         return view('admin.auth.login');
     }
 
@@ -24,6 +29,11 @@ class AuthController extends Controller
             'username' => $request->username,
             'password' => $request->password
         ];
+
+        // Logout customer guard dulu kalau ada, supaya tidak bentrok session
+        if (Auth::guard('customer')->check()) {
+            Auth::guard('customer')->logout();
+        }
 
         if (Auth::guard('web')->attempt($credentials)) {
             $request->session()->regenerate();
@@ -47,8 +57,12 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
+
+        // Hapus session key admin saja, jangan invalidate seluruh session
+        // agar tidak mempengaruhi customer session jika ada
+        $request->session()->forget('login_web_' . sha1('App\Models\User'));
         $request->session()->regenerateToken();
+
         return redirect()->route('admin.login');
     }
 }

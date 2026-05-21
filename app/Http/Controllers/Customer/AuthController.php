@@ -12,6 +12,11 @@ class AuthController extends Controller
 {
     public function showLoginForm()
     {
+        // Jika sudah login sebagai customer, redirect ke home
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('home');
+        }
+
         return view('customer.auth.login');
     }
 
@@ -22,10 +27,17 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        // Logout admin guard dulu kalau ada, supaya tidak bentrok session
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+        }
+
         if (Auth::guard('customer')->attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('home'))->with('success', 'Berhasil masuk.');
+            // Selalu redirect ke home, jangan pakai intended() karena bisa
+            // redirect ke admin dashboard jika sebelumnya pernah akses admin
+            return redirect()->route('home')->with('success', 'Berhasil masuk.');
         }
 
         return back()->withErrors([
@@ -65,7 +77,9 @@ class AuthController extends Controller
     {
         Auth::guard('customer')->logout();
 
-        $request->session()->invalidate();
+        // Hapus session key customer saja, jangan invalidate seluruh session
+        // agar tidak mempengaruhi admin session jika ada
+        $request->session()->forget('login_customer_' . sha1('App\Models\Customer'));
         $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Berhasil keluar.');

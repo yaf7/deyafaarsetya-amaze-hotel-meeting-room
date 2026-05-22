@@ -30,12 +30,7 @@ class AuthController extends Controller
             'password' => $request->password
         ];
 
-        // Logout customer guard dulu kalau ada, supaya tidak bentrok session
-        if (Auth::guard('customer')->check()) {
-            Auth::guard('customer')->logout();
-        }
-
-        if (Auth::guard('web')->attempt($credentials)) {
+        if (Auth::guard('web')->attempt($credentials, true)) {
             $request->session()->regenerate();
 
             $user = Auth::guard('web')->user();
@@ -58,9 +53,6 @@ class AuthController extends Controller
     {
         Auth::guard('web')->logout();
 
-        // Hapus session key admin saja, jangan invalidate seluruh session
-        // agar tidak mempengaruhi customer session jika ada
-        $request->session()->forget('login_web_' . sha1('App\Models\User'));
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login');

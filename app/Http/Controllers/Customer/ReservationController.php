@@ -10,6 +10,7 @@ use App\Models\Reservation;
 use App\Models\Payment;
 use App\Models\BuffetMenu;
 use App\Models\ReservationBuffetSelection;
+use App\Services\WhatsappNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -26,10 +27,16 @@ class ReservationController extends Controller
      */
     private function checkSessionConflict($roomId, $date, $newSession, $newPackageName = '', $excludeReservationId = null)
     {
-        // Ambil semua reservasi aktif (sukses) untuk ruangan ini di tanggal ini
+        // Ambil semua reservasi aktif (sukses) untuk ruangan ini di tanggal ini ATAU yang sedang mengajukan reschedule ke tanggal ini
         $existing = Reservation::where('meeting_room_id', $roomId)
-            ->where('date', $date)
             ->where('status', 'sukses')
+            ->where(function ($query) use ($date) {
+                $query->where('date', $date)
+                      ->orWhere(function ($q) use ($date) {
+                          $q->where('requested_reschedule_date', $date)
+                            ->where('reschedule_status', 'pending');
+                      });
+            })
             ->when($excludeReservationId, function($q) use ($excludeReservationId) {
                 return $q->where('id', '!=', $excludeReservationId);
             })
@@ -41,7 +48,8 @@ class ReservationController extends Controller
 
         // Cek apakah sudah ada reservasi Fullboard/Residential di tanggal ini
         foreach ($existing as $res) {
-            $resSession = $res->time ?? '';
+            $isPendingRescheduleToThisDate = $res->reschedule_status === 'pending' && $res->requested_reschedule_date && $res->requested_reschedule_date->format('Y-m-d') === $date;
+            $resSession = $isPendingRescheduleToThisDate ? $res->requested_reschedule_session : ($res->time ?? '');
             $resPkg = strtolower($res->foodPackage->name ?? '');
 
             if (str_contains($resSession, 'Fullboard') || str_contains($resPkg, 'full board') || str_contains($resPkg, 'residential')) {
@@ -56,7 +64,10 @@ class ReservationController extends Controller
         }
 
         // Ambil sesi-sesi yang sudah ada
-        $existingSessions = $existing->pluck('time')->toArray();
+        $existingSessions = $existing->map(function ($res) use ($date) {
+            $isPendingRescheduleToThisDate = $res->reschedule_status === 'pending' && $res->requested_reschedule_date && $res->requested_reschedule_date->format('Y-m-d') === $date;
+            return $isPendingRescheduleToThisDate ? $res->requested_reschedule_session : $res->time;
+        })->toArray();
 
         // Cek apakah sesi yang sama sudah ada
         foreach ($existingSessions as $s) {
@@ -373,6 +384,9 @@ class ReservationController extends Controller
 
         $reservation->update(['status' => 'sukses']);
 
+        // Auto-kirim notifikasi WhatsApp simulasi
+        WhatsappNotificationService::sendAutoNotification($reservation);
+
         return redirect()->route('reservation.invoice', $reservation->id);
     }
 
@@ -401,10 +415,18 @@ class ReservationController extends Controller
             'date' => 'required|date',
         ]);
 
-        // Ambil semua reservasi aktif di tanggal ini
+        // Ambil semua reservasi aktif di tanggal ini ATAU yang sedang mengajukan reschedule ke tanggal ini
         $existing = Reservation::where('meeting_room_id', $request->room_id)
-            ->where('date', $request->date)
             ->where('status', 'sukses')
+            ->where(function ($query) use ($request) {
+                // 1. Reservasi yang tanggal aslinya adalah tanggal ini (termasuk jika mereka sedang pending reschedule ke tanggal lain, tanggal aslinya tetap jadi milik mereka sampai di-acc)
+                $query->where('date', $request->date)
+                      // 2. Atau reservasi yang tanggal aslinya BUKAN tanggal ini, tapi mereka mengajukan reschedule KE tanggal ini
+                      ->orWhere(function ($q) use ($request) {
+                          $q->where('requested_reschedule_date', $request->date)
+                            ->where('reschedule_status', 'pending');
+                      });
+            })
             ->get();
 
         // Cek apakah masih ada slot tersedia
@@ -414,7 +436,9 @@ class ReservationController extends Controller
 
         if ($existing->count() > 0) {
             foreach ($existing as $res) {
-                $resSession = $res->time ?? '';
+                // Gunakan sesi reschedule jika sedang pending reschedule ke tanggal ini, jika tidak gunakan sesi asli
+                $isPendingRescheduleToThisDate = $res->reschedule_status === 'pending' && $res->requested_reschedule_date && $res->requested_reschedule_date->format('Y-m-d') === $request->date;
+                $resSession = $isPendingRescheduleToThisDate ? $res->requested_reschedule_session : ($res->time ?? '');
                 $resPkg = strtolower($res->foodPackage->name ?? '');
                 $bookedSessions[] = $resSession;
 

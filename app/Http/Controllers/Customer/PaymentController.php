@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use App\Models\Payment;
+use App\Services\WhatsappNotificationService;
 use Illuminate\Http\Request;
 use Midtrans\Config;
 use Midtrans\Snap;
@@ -159,6 +160,7 @@ class PaymentController extends Controller
                     'payment_method' => $paymentType,
                 ]);
                 $reservation->update(['status' => 'sukses']);
+                WhatsappNotificationService::sendAutoNotification($reservation);
                 \Log::info('Payment SUKSES for order_id: ' . $orderId);
             }
         } elseif ($transactionStatus == 'pending') {
@@ -224,6 +226,7 @@ class PaymentController extends Controller
                             'payment_method' => $paymentType,
                         ]);
                         $reservation->update(['status' => 'sukses']);
+                        WhatsappNotificationService::sendAutoNotification($reservation);
                         $updated = true;
                         \Log::info('Finish: Set SUKSES via Midtrans API');
                     } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
@@ -246,6 +249,7 @@ class PaymentController extends Controller
                         'payment_method' => $request->get('payment_type', 'midtrans'),
                     ]);
                     $reservation->update(['status' => 'sukses']);
+                    WhatsappNotificationService::sendAutoNotification($reservation);
                     $updated = true;
                     \Log::info('Finish: Set SUKSES via snap_status fallback');
                 }
@@ -257,6 +261,7 @@ class PaymentController extends Controller
                         'payment_method' => $request->get('payment_type', 'midtrans'),
                     ]);
                     $reservation->update(['status' => 'sukses']);
+                    WhatsappNotificationService::sendAutoNotification($reservation);
                     \Log::info('Finish: Set SUKSES via transaction_status param fallback');
                 }
 

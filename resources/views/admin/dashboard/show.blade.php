@@ -448,28 +448,45 @@
             </div>
         </div>
 
-        <!-- Konfirmasi WhatsApp -->
+        <!-- Simulasi Notifikasi WhatsApp Otomatis -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 {{ $reservation->whatsapp_sent ? 'bg-blue-100' : 'bg-green-100' }} rounded-xl flex items-center justify-center">
-                    <i class="fab fa-whatsapp {{ $reservation->whatsapp_sent ? 'text-blue-600' : 'text-green-600' }} text-xl"></i>
+                <div class="w-10 h-10 {{ $reservation->whatsapp_sent ? 'bg-green-100' : 'bg-gray-100' }} rounded-xl flex items-center justify-center">
+                    <i class="fab fa-whatsapp {{ $reservation->whatsapp_sent ? 'text-green-600' : 'text-gray-400' }} text-xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold text-gray-800">Konfirmasi WhatsApp</h2>
+                    <h2 class="text-lg font-bold text-gray-800">Notifikasi WhatsApp</h2>
+                    <p class="text-xs text-gray-500">Simulasi otomatis</p>
                 </div>
             </div>
             
             @if($reservation->whatsapp_sent)
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                    <div class="flex items-center gap-2 text-green-700 mb-1">
+                        <i class="fas fa-check-circle text-sm"></i>
+                        <span class="font-semibold text-sm">Notifikasi Terkirim</span>
+                    </div>
+                    <p class="text-xs text-green-600">
+                        Terkirim otomatis pada {{ $reservation->whatsapp_sent_at ? $reservation->whatsapp_sent_at->locale('id')->isoFormat('D MMM Y, HH:mm') : '-' }}
+                    </p>
+                </div>
                 <a href="{{ route('admin.reservation.whatsapp', $reservation->id) }}"
-                   class="w-full bg-white border-2 border-green-500 hover:bg-green-50 text-green-600 px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 mt-4">
+                   class="w-full bg-white border-2 border-green-500 hover:bg-green-50 text-green-600 px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
                     <i class="fab fa-whatsapp text-lg"></i>
-                    Buka Halaman WhatsApp
+                    Lihat Notifikasi
                 </a>
             @else
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                    <div class="flex items-center gap-2 text-amber-700 mb-1">
+                        <i class="fas fa-clock text-sm"></i>
+                        <span class="font-semibold text-sm">Menunggu Konfirmasi</span>
+                    </div>
+                    <p class="text-xs text-amber-600">Notifikasi WhatsApp akan otomatis terkirim saat status diubah ke <strong>Sukses</strong>.</p>
+                </div>
                 <a href="{{ route('admin.reservation.whatsapp', $reservation->id) }}"
-                   class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 mt-4">
+                   class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 px-4 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
                     <i class="fab fa-whatsapp text-lg"></i>
-                    Buka Halaman WhatsApp
+                    Lihat Halaman Notifikasi
                 </a>
             @endif
         </div>

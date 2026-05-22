@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use App\Models\MeetingRoom;
 use App\Models\FoodPackage;
 use App\Models\Promotion;
+use App\Services\WhatsappNotificationService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -159,7 +160,8 @@ class DashboardController extends Controller
             'status' => 'required|in:pending,sukses,dibatalkan'
         ]);
 
-        $reservation = Reservation::with('payment')->findOrFail($id);
+        $reservation = Reservation::with(['payment', 'meetingRoom', 'foodPackage', 'promotion', 'buffetSelections.buffetMenu'])->findOrFail($id);
+        $oldStatus = $reservation->status;
         $reservation->update(['status' => $request->status]);
 
         // Sinkronkan status pembayaran dengan status reservasi
@@ -173,6 +175,11 @@ class DashboardController extends Controller
             $reservation->payment->update([
                 'payment_status' => $paymentStatus,
             ]);
+        }
+
+        // Auto-kirim notifikasi WhatsApp simulasi saat status berubah ke sukses
+        if ($request->status === 'sukses' && $oldStatus !== 'sukses' && !$reservation->whatsapp_sent) {
+            WhatsappNotificationService::sendAutoNotification($reservation);
         }
 
         return back()->with('success', 'Status reservasi berhasil diperbarui.');
@@ -194,51 +201,20 @@ class DashboardController extends Controller
         return view('admin.dashboard.whatsapp-simulation', compact('reservation'));
     }
 
-    public function markWhatsappSent(Request $request, $id)
-    {
-        $reservation = Reservation::findOrFail($id);
-
-        // Tandai sebagai sudah dikirim
-        $reservation->update([
-            'whatsapp_sent' => true,
-            'whatsapp_sent_at' => now()
-        ]);
-
-        if ($request->has('message')) {
-            $reservation->chats()->create([
-                'sender' => 'admin',
-                'message' => $request->message
-            ]);
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Pesan terkirim.']);
-        }
-
-        return redirect()->route('admin.reservation.show', $id)
-            ->with('success', 'Pesan WhatsApp telah ditandai sebagai Terkirim.');
-    }
-
-    public function simulateCustomerReply(Request $request, $id)
-    {
-        $reservation = Reservation::findOrFail($id);
-        
-        $reservation->chats()->create([
-            'sender' => 'customer',
-            'message' => "Waalaikumsalam, baik terima kasih konfirmasinya 🙏"
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
     /**
      * Helper: Cek konflik sesi untuk admin.
      */
     private function checkAdminSessionConflict($roomId, $date, $newSession, $newPackageName = '', $excludeReservationId = null)
     {
         $existing = Reservation::where('meeting_room_id', $roomId)
-            ->where('date', $date)
             ->where('status', 'sukses')
+            ->where(function ($query) use ($date) {
+                $query->where('date', $date)
+                      ->orWhere(function ($q) use ($date) {
+                          $q->where('requested_reschedule_date', $date)
+                            ->where('reschedule_status', 'pending');
+                      });
+            })
             ->when($excludeReservationId, function($q) use ($excludeReservationId) {
                 return $q->where('id', '!=', $excludeReservationId);
             })
@@ -249,7 +225,8 @@ class DashboardController extends Controller
         }
 
         foreach ($existing as $res) {
-            $resSession = $res->time ?? '';
+            $isPendingRescheduleToThisDate = $res->reschedule_status === 'pending' && $res->requested_reschedule_date && $res->requested_reschedule_date->format('Y-m-d') === $date;
+            $resSession = $isPendingRescheduleToThisDate ? $res->requested_reschedule_session : ($res->time ?? '');
             $resPkg = strtolower($res->foodPackage->name ?? '');
 
             if (str_contains($resSession, 'Fullboard') || str_contains($resPkg, 'full board') || str_contains($resPkg, 'residential')) {
@@ -262,7 +239,10 @@ class DashboardController extends Controller
             return 'Tidak bisa memesan sesi Fullboard/Residential karena sudah ada reservasi lain pada tanggal ini.';
         }
 
-        $existingSessions = $existing->pluck('time')->toArray();
+        $existingSessions = $existing->map(function ($res) use ($date) {
+            $isPendingRescheduleToThisDate = $res->reschedule_status === 'pending' && $res->requested_reschedule_date && $res->requested_reschedule_date->format('Y-m-d') === $date;
+            return $isPendingRescheduleToThisDate ? $res->requested_reschedule_session : $res->time;
+        })->toArray();
 
         foreach ($existingSessions as $s) {
             if ($s === $newSession) {
@@ -294,7 +274,7 @@ class DashboardController extends Controller
      */
     public function approveReschedule($id)
     {
-        $reservation = Reservation::findOrFail($id);
+        $reservation = Reservation::with(['meetingRoom', 'foodPackage', 'promotion'])->findOrFail($id);
 
         if ($reservation->reschedule_status !== 'pending') {
             return back()->with('error', 'Tidak ada pengajuan reschedule aktif untuk reservasi ini.');
@@ -313,6 +293,10 @@ class DashboardController extends Controller
             return back()->with('error', "Gagal menyetujui reschedule: {$conflictError}");
         }
 
+        // Simpan jadwal lama sebelum diperbarui
+        $oldDate = $reservation->date->format('Y-m-d');
+        $oldSession = $reservation->time;
+
         // Update jadwal utama
         $reservation->update([
             'date' => $reservation->requested_reschedule_date,
@@ -324,6 +308,9 @@ class DashboardController extends Controller
             'reschedule_rejection_reason' => null,
             'reschedule_notification_read' => false
         ]);
+
+        // Auto-kirim notifikasi WhatsApp simulasi reschedule
+        WhatsappNotificationService::sendRescheduleNotification($reservation, $oldDate, $oldSession);
 
         return back()->with('success', 'Pengajuan reschedule berhasil disetujui.');
     }

@@ -255,61 +255,75 @@
             flex-shrink: 0;
         }
 
-        /* Input Bar */
-        .wa-input {
-            background: #1f2c34;
-            padding: 8px 12px;
+        /* Auto-notif banner */
+        .auto-notif-banner {
+            background: #1d2831;
+            padding: 12px 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             flex-shrink: 0;
             border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        .wa-input .emoji-btn {
-            color: #8696a0;
-            font-size: 22px;
-            flex-shrink: 0;
-        }
-
-        .wa-input .input-field {
-            flex: 1;
-            background: #2a3942;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: #e9edef;
-            font-size: 14px;
-            outline: none;
-            font-family: inherit;
-            resize: none;
-            overflow-y: auto;
-            min-height: 48px;
-            max-height: 120px;
-        }
-
-        .wa-input .input-field::placeholder {
-            color: #8696a0;
-        }
-
-        .wa-input .send-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: #00a884;
-            border: none;
-            color: white;
+        .auto-notif-banner i {
+            color: #00a884;
             font-size: 18px;
+        }
+
+        .auto-notif-banner .notif-text {
+            flex: 1;
+        }
+
+        .auto-notif-banner .notif-text p {
+            color: #8696a0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .auto-notif-banner .notif-text p strong {
+            color: #00a884;
+        }
+
+        /* No messages state */
+        .no-messages {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .no-messages .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: background 0.2s;
+            margin-bottom: 16px;
         }
 
-        .wa-input .send-btn:hover {
-            background: #06cf9c;
+        .no-messages .icon-wrapper i {
+            font-size: 32px;
+            color: #8696a0;
+        }
+
+        .no-messages h3 {
+            color: #e9edef;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .no-messages p {
+            color: #8696a0;
+            font-size: 13px;
+            max-width: 280px;
+            line-height: 1.5;
         }
 
         /* Encryption notice */
@@ -389,189 +403,70 @@
             <span><i class="fas fa-lock" style="font-size:9px"></i> Pesan dan panggilan terenkripsi end-to-end</span>
         </div>
 
-        <!-- Chat Area -->
-        <div class="wa-chat" id="chat-area">
-            <!-- Date Badge -->
-            <div class="date-badge">
-                <span>{{ now()->locale('id')->isoFormat('D MMMM Y') }}</span>
-            </div>
-            
-            @foreach($reservation->chats as $chat)
-                @php
-                    $formattedMsg = nl2br(htmlspecialchars($chat->message));
-                    $formattedMsg = preg_replace('/\*(.*?)\*/', '<b>$1</b>', $formattedMsg);
-                @endphp
-                <div class="message {{ $chat->sender == 'admin' ? 'sent' : 'received' }}" style="animation-delay: 0s">
-                    <div class="bubble">
-                        {!! $formattedMsg !!}
-                        <div class="time">
-                            <span>{{ $chat->created_at->format('H:i') }}</span>
-                            @if($chat->sender == 'admin')
-                                <i class="fas fa-check-double read-check" style="color: #53bdeb;"></i>
-                            @endif
+        @if($reservation->chats->count() > 0)
+            <!-- Chat Area (Read-Only) -->
+            <div class="wa-chat" id="chat-area">
+                <!-- Date Badge -->
+                <div class="date-badge">
+                    <span>{{ $reservation->whatsapp_sent_at ? $reservation->whatsapp_sent_at->locale('id')->isoFormat('D MMMM Y') : now()->locale('id')->isoFormat('D MMMM Y') }}</span>
+                </div>
+                
+                @foreach($reservation->chats as $chat)
+                    @php
+                        $formattedMsg = nl2br(htmlspecialchars($chat->message));
+                        $formattedMsg = preg_replace('/\*(.*?)\*/', '<b>$1</b>', $formattedMsg);
+                    @endphp
+                    <div class="message {{ $chat->sender == 'admin' ? 'sent' : 'received' }}" style="animation-delay: 0s">
+                        <div class="bubble">
+                            {!! $formattedMsg !!}
+                            <div class="time">
+                                <span>{{ $chat->created_at->format('H:i') }}</span>
+                                @if($chat->sender == 'admin')
+                                    <i class="fas fa-check-double read-check" style="color: #53bdeb;"></i>
+                                @endif
+                            </div>
                         </div>
                     </div>
+                @endforeach
+            </div>
+
+            <!-- Auto Notification Banner -->
+            <div class="auto-notif-banner">
+                <i class="fas fa-robot"></i>
+                <div class="notif-text">
+                    <p><strong>Notifikasi Otomatis</strong> — Pesan ini terkirim otomatis saat status reservasi dikonfirmasi (Sukses).
+                        @if($reservation->whatsapp_sent_at)
+                            <br>Terkirim pada {{ $reservation->whatsapp_sent_at->locale('id')->isoFormat('D MMM Y, HH:mm') }}
+                        @endif
+                    </p>
                 </div>
-            @endforeach
-        </div>
+            </div>
+        @else
+            <!-- No Messages State -->
+            <div class="no-messages">
+                <div class="icon-wrapper">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <h3>Belum Ada Notifikasi</h3>
+                <p>Notifikasi WhatsApp akan otomatis terkirim ketika status reservasi diubah menjadi <strong style="color: #00a884;">Sukses</strong>.</p>
+            </div>
 
-        @php
-            $template = "";
-            if ($reservation->chats->isEmpty()) {
-                $tanggal = \Carbon\Carbon::parse($reservation->date)->locale('id')->isoFormat('dddd, D MMM Y');
-                $buffetMenuText = "";
-                if ($reservation->buffetSelections->count() > 0) {
-                    $buffetMenuText = "\n🍱 *Menu Buffet:*\n";
-                    foreach ($reservation->buffetSelections as $sel) {
-                        $buffetMenuText .= "• " . $sel->buffetMenu->name . " (" . ucfirst($sel->buffetMenu->category) . ")\n";
-                    }
-                }
-
-                $discountPercent = $reservation->promotion?->discount ?? 0;
-                $discountAmount = ($reservation->total_price * $discountPercent) / 100;
-                $finalPrice = number_format($reservation->total_price - $discountAmount, 0, ',', '.');
-                
-                $statusPaymentMsg = $reservation->status == 'sukses' 
-                    ? "✅ Pembayaran telah diterima. Reservasi Anda sudah dikonfirmasi. Silakan datang 15 menit sebelum waktu yang ditentukan.\n\n"
-                    : "⌛ Menunggu Pembayaran. Silakan selesaikan pembayaran untuk mengkonfirmasi reservasi Anda.\n\n";
-
-                $template = "Assalamu'alaikum {$reservation->customer_name} 👋\n\n"
-                    . "Kami dari *Amaze Hotel Kediri* ingin mengkonfirmasi reservasi meeting room Anda.\n\n"
-                    . "📋 *KONFIRMASI RESERVASI #" . str_pad($reservation->id, 6, '0', STR_PAD_LEFT) . "*\n"
-                    . "━━━━━━━━━━━━━━━━━━\n"
-                    . "📅 Tanggal: {$tanggal}\n"
-                    . "🕐 Sesi: {$reservation->time}\n"
-                    . "🏨 Ruangan: {$reservation->meetingRoom->name}\n"
-                    . "👥 Peserta: {$reservation->participants} orang\n"
-                    . "🍽️ Paket: {$reservation->foodPackage->name}\n\n"
-                    . "🏢 *Fasilitas Ruangan:*\n"
-                    . "• LCD Projector + Screen\n"
-                    . "• Sound System\n"
-                    . "• Flipchart & Writing Materials\n"
-                    . "• Air Mineral\n\n"
-                    . "🍴 *Menu Include:*\n"
-                    . "• Nasi Putih\n"
-                    . "• 2 Kind of Slice Fruit\n"
-                    . "• Assorted Dessert\n"
-                    . "• Any Kind Juice\n"
-                    . "• Mineral Dispenser\n"
-                    . "• Coffee Break\n"
-                    . $buffetMenuText . "\n"
-                    . "💰 *Total Bayar: Rp{$finalPrice}*\n\n"
-                    . $statusPaymentMsg
-                    . "Terima kasih! 🙏";
-            }
-        @endphp
-
-        <!-- Input Bar with Form -->
-        <form id="wa-form" class="wa-input m-0" style="align-items: flex-end;">
-            <span class="emoji-btn" style="margin-bottom: 12px;"><i class="far fa-smile"></i></span>
-            <textarea id="message-input" class="input-field" placeholder="Ketik pesan..." required>{{ $template }}</textarea>
-            <button type="submit" class="send-btn" style="margin-bottom: 2px;">
-                <i class="fas fa-paper-plane" style="margin-left: 2px"></i>
-            </button>
-        </form>
+            <!-- Auto Notification Banner -->
+            <div class="auto-notif-banner">
+                <i class="fas fa-info-circle" style="color: #8696a0;"></i>
+                <div class="notif-text">
+                    <p>Notifikasi bersifat <strong>otomatis</strong> — Anda tidak perlu mengirim pesan secara manual. Konfirmasi status reservasi untuk mengirim notifikasi.</p>
+                </div>
+            </div>
+        @endif
     </div>
 
     <script>
-        const textarea = document.getElementById('message-input');
-        let customerHasReplied = {{ $reservation->chats->where('sender', 'customer')->count() > 0 ? 'true' : 'false' }};
-        
-        // Auto-expand textarea
-        textarea.addEventListener('input', function() {
-            this.style.height = '48px';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-
-        // Trigger expand on load
-        setTimeout(() => {
-            textarea.style.height = '48px';
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-        }, 100);
-
-        document.getElementById('wa-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const message = textarea.value;
-            if(!message.trim()) return;
-            
-            const chatArea = document.getElementById('chat-area');
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            
-            // Format message (simple replace newlines to br, wrap bold)
-            let formattedMessage = message.replace(/\n/g, '<br>');
-            formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<b>$1</b>');
-            
-            // Append the sent message
-            const sentHtml = `
-                <div class="message sent" style="animation-delay: 0s">
-                    <div class="bubble">
-                        ${formattedMessage}
-                        <div class="time">
-                            <span>${timeStr}</span>
-                            <i class="fas fa-check-double read-check" style="color: #8696a0;" id="pending-ticks"></i>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chatArea.insertAdjacentHTML('beforeend', sentHtml);
-            
-            // Clear and reset textarea
-            textarea.value = '';
-            textarea.style.height = '48px';
+        // Auto-scroll to bottom
+        const chatArea = document.getElementById('chat-area');
+        if (chatArea) {
             chatArea.scrollTop = chatArea.scrollHeight;
-
-            // Submit to backend asynchronously
-            fetch("{{ route('admin.reservation.whatsapp.send', $reservation->id) }}", {
-                method: 'POST',
-                body: JSON.stringify({ message: message }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Turn ticks to blue
-                    const ticks = document.querySelectorAll('#pending-ticks');
-                    ticks.forEach(t => {
-                        t.style.color = '#53bdeb';
-                        t.id = ''; // remove id
-                    });
-                    
-                    // Simulate customer replying shortly after, only ONCE
-                    if (!customerHasReplied && {{ $reservation->chats->isEmpty() ? 'true' : 'false' }}) {
-                        customerHasReplied = true;
-                        setTimeout(() => {
-                            fetch("{{ route('admin.reservation.whatsapp.reply', $reservation->id) }}", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                }
-                            }).then(() => {
-                                const replyHtml = `
-                                    <div class="message received" style="animation-delay: 0s">
-                                        <div class="bubble">
-                                            Waalaikumsalam, baik terima kasih konfirmasinya 🙏
-                                            <div class="time">
-                                                <span>${timeStr}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                                chatArea.insertAdjacentHTML('beforeend', replyHtml);
-                                chatArea.scrollTop = chatArea.scrollHeight;
-                            });
-                        }, 1500);
-                    }
-                }
-            });
-        });
+        }
     </script>
 </body>
 </html>

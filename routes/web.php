@@ -85,8 +85,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/reservations/{id}/reschedule/approve', [DashboardController::class, 'approveReschedule'])->name('admin.reservation.reschedule.approve');
         Route::post('/reservations/{id}/reschedule/reject', [DashboardController::class, 'rejectReschedule'])->name('admin.reservation.reschedule.reject');
         Route::get('/reservations/{id}/whatsapp', [DashboardController::class, 'whatsappSimulation'])->name('admin.reservation.whatsapp');
-        Route::post('/reservations/{id}/whatsapp/send', [DashboardController::class, 'markWhatsappSent'])->name('admin.reservation.whatsapp.send');
-        Route::post('/reservations/{id}/whatsapp/reply', [DashboardController::class, 'simulateCustomerReply'])->name('admin.reservation.whatsapp.reply');
 
         // 3. Kelola Ruang Meeting
         Route::resource('rooms', MeetingRoomController::class)->names([
